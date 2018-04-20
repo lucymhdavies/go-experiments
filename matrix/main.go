@@ -1,5 +1,9 @@
 package main
 
+// TODO: use a uint8
+// That way, we know we have a max of 255 (which is more than enough for this, I reckon)
+// And we don't need to calculate cell width on the fly
+
 import (
 	"fmt"
 	"math"
@@ -9,60 +13,38 @@ import (
 	"time"
 
 	tm "github.com/buger/goterm"
-	// 	"github.com/mgutz/ansi"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
-	CellWidth         = 2
-	CellBuffer        = 1
+	// Display stuff; controls how big the matrix is
+	CellWidth  = 2
+	CellBuffer = 1
+
+	// How many of the cells will increment every tick
 	ChanceOfIncrement = 0.01 // TODO: this should be a variable, inversely proportional to the sum of the matrix
-	IncrementAmount   = 1
-	UpdatesPerSecond  = 100
+
+	// How much will it increment by
+	IncrementAmount = 1
+
+	// How many ticks to attempt every second
+	// This can be super high, but would then essentially fill up immediatelly
+	UpdatesPerSecond = 600
+
+	// How often to refresh the view
+	FramesPerSecond = 30
 )
 
 var (
 	// what's the biggest hex number we can display?
 	MaxDisplay = int(math.Pow(16, CellWidth))
 	FullString = strings.Repeat("X", CellWidth)
-)
 
-// // getColor maps an integer to an ansi color code
-// func getColor(i int) string {
-// 	// TODO: use grayscale
-// 	// 232 - 255
-// 	// <= 243, white fg
-// 	// else black fg
-//
-// 	// Some ansi colors from https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-//
-// 	if i < MaxDisplay*1/6 {
-// 		return "white:16"
-// 	}
-//
-// 	if i < MaxDisplay*2/6 {
-// 		return "white:17"
-// 	}
-//
-// 	if i < MaxDisplay*3/6 {
-// 		return "white:18"
-// 	}
-//
-// 	if i < MaxDisplay*4/6 {
-// 		return "white:19"
-// 	}
-//
-// 	if i < MaxDisplay*5/6 {
-// 		return "white:20"
-// 	}
-//
-// 	return "white:21"
-// }
+	matrix [][]int
+)
 
 // printMatrix just prints it to screen
 func printMatrix(matrix [][]int) {
-
-	// 	reset := ansi.ColorCode("reset")
 
 	// print the matrix
 
@@ -80,10 +62,6 @@ func printMatrix(matrix [][]int) {
 				cellString = fmt.Sprintf(" %*x", CellWidth, cellValue)
 			}
 
-			// 			// TODO: find a better color library. this one is slow
-			// 			color := ansi.ColorCode(getColor(cellValue))
-			// 			fmt.Printf("%s%s%s", color, fmt.Sprintf("%s", cellString), reset)
-
 			fmt.Printf(cellString)
 		}
 		fmt.Print("\n")
@@ -93,23 +71,39 @@ func printMatrix(matrix [][]int) {
 // randomIncrementMatrix will, for every cell, with a certain percentage, either increment or not
 func randomIncrementMatrix(matrix [][]int) {
 
-	// TODO: better idea would be to pick a random element from the matrix and increment it
-	// https://stackoverflow.com/a/33994787
+	// Each row has the same number of cols, so use first col
+	numRows := len(matrix)
+	numCols := len(matrix[1])
+	numCells := numRows * numCols
 
-	// TODO: do this concurrently, 1 thread per row?
-	for row := range matrix {
-		for col := range matrix[row] {
-			rand := rand.Float32()
-			if rand < ChanceOfIncrement {
+	cellsToIncrement := int(float32(numCells) * ChanceOfIncrement)
+	// TODO: what happens if this is zero?
 
-				matrix[row][col] = matrix[row][col] + IncrementAmount
-			}
-		}
+	for i := 0; i < cellsToIncrement; i++ {
+		randCellRow := rand.Intn(numRows)
+		randCellCol := rand.Intn(numCols)
+
+		matrix[randCellRow][randCellCol] = matrix[randCellRow][randCellCol] + IncrementAmount
+	}
+
+}
+
+// stuffHappens is the loop where stuff actually happens
+func stuffHappens() {
+
+	for {
+		// TODO
+		// Distribute some of your value to neighbours
+		// Requires keeping track of non-empty cells
+
+		// Random Increment
+		randomIncrementMatrix(matrix)
+
+		time.Sleep(time.Second / UpdatesPerSecond)
 	}
 }
 
-func main() {
-
+func init() {
 	// Not going to bother handling screen resizing
 	fd := int(os.Stdin.Fd())
 	tw, th, _ := terminal.GetSize(fd)
@@ -118,13 +112,23 @@ func main() {
 	cols := tw / (CellWidth + CellBuffer)
 
 	// Create a matrix of integers, same dimensions as the terminal
-	matrix := make([][]int, rows)
+	matrix = make([][]int, rows)
 	for i := range matrix {
 		matrix[i] = make([]int, cols)
 	}
 
-	tm.Clear()             // Clear current screen
-	fmt.Print("\033[?25l") // hide cursor
+	// Seed the RNG
+	rand.Seed(time.Now().UnixNano())
+
+}
+
+func main() {
+	tm.Clear()                   // Clear current screen
+	fmt.Print("\033[?25l")       // hide cursor
+	defer fmt.Print("\033[?25h") //unhide cursor
+
+	go stuffHappens()
+
 	for {
 		// By moving cursor to top-left position we ensure that console output
 		// will be overwritten each time, instead of adding new.
@@ -133,15 +137,9 @@ func main() {
 		// Display
 		printMatrix(matrix)
 
-		// TODO
-		// Distribute some of your value to neighbours
-		// Requires keeping track of non-empty cells
-
-		// Random Increment
-		randomIncrementMatrix(matrix)
-
 		tm.Flush() // Call it every time at the end of rendering
-		time.Sleep(time.Second / UpdatesPerSecond)
+		time.Sleep(time.Second / FramesPerSecond)
+
 	}
 
 }
