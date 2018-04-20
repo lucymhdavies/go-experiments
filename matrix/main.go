@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/rand"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	tm "github.com/buger/goterm"
+	"github.com/mgutz/ansi"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -34,10 +36,16 @@ const (
 
 	// How many ticks to attempt every second
 	// This can be super high, but would then essentially fill up immediatelly
-	TicksPerSecond = 48 // TODO: allow this to be < 1
+	TicksPerSecond = 24 // TODO: allow this to be < 1
 
 	// How often to refresh the view
 	FramesPerSecond = 24
+
+	// Whether to display cell value or not
+	DisplayValue = false
+
+	// Whether to enable colors for cells
+	EnableColor = true
 )
 
 var (
@@ -46,10 +54,63 @@ var (
 	FullString = strings.Repeat("X", CellWidth)
 
 	matrix [][]float32
+
+	resetColorCode = ansi.ColorCode("reset")
+	// Color Codes
+	minColor int = 232
+	maxColor int = 255
+	midColor int = 243 // white below, black above
 )
+
+func transformValToColor(cellValue float32) (int, string) {
+
+	// https://math.stackexchange.com/a/377174
+	colorCode := int(cellValue*(float32(maxColor-minColor)/float32(MaxDisplay)) + float32(minColor))
+
+	// make sure it's within range
+	colorCode = int(math.Max(float64(colorCode), float64(minColor)))
+	colorCode = int(math.Min(float64(colorCode), float64(maxColor)))
+
+	fg := "white"
+
+	if colorCode > midColor {
+		fg = "black"
+	}
+
+	return colorCode, fg
+
+}
+
+// cellColorString
+func cellString(cellValue float32) string {
+
+	cellString := ""
+
+	if DisplayValue {
+		// if bigger than we can display
+		if int(cellValue) >= MaxDisplay {
+			cellString = fmt.Sprintf(" %s", FullString)
+		} else {
+			cellString = fmt.Sprintf(" %*x", CellWidth, int(cellValue))
+		}
+	} else {
+		cellString = fmt.Sprintf(" %s", strings.Repeat(" ", CellWidth))
+	}
+
+	if EnableColor {
+		cellColor, fg := transformValToColor(float32(cellValue))
+		color := ansi.ColorCode(fmt.Sprintf("%s:%d", fg, cellColor))
+		cellString = color + cellString + resetColorCode
+	}
+
+	return cellString
+
+}
 
 // printMatrix just prints it to screen
 func printMatrix(matrix [][]float32) {
+
+	var buffer bytes.Buffer
 
 	// print the matrix
 
@@ -58,19 +119,14 @@ func printMatrix(matrix [][]float32) {
 	for row := range matrix {
 		for col := range matrix[row] {
 			cellValue := matrix[row][col]
-			cellString := ""
 
-			// if bigger than we can display
-			if int(cellValue) >= MaxDisplay {
-				cellString = fmt.Sprintf(" %s", FullString)
-			} else {
-				cellString = fmt.Sprintf(" %*x", CellWidth, int(cellValue))
-			}
-
-			fmt.Printf(cellString)
+			buffer.WriteString(cellString(cellValue))
 		}
-		fmt.Print("\n")
+		buffer.WriteString("\n")
 	}
+
+	fmt.Println(buffer.String())
+
 }
 
 // randomIncrementMatrix will, for every cell, with a certain percentage, either increment or not
@@ -264,7 +320,7 @@ func init() {
 	fd := int(os.Stdin.Fd())
 	tw, th, _ := terminal.GetSize(fd)
 
-	rows := th * 3 / 4
+	rows := th - 3
 	cols := tw / (CellWidth + CellBuffer)
 
 	// Create a matrix of integers, same dimensions as the terminal
