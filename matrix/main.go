@@ -21,31 +21,31 @@ const (
 
 	// How many of the cells will increment every tick
 	// TODO: this should be a variable, inversely proportional to the sum of the matrix
-	ChanceOfIncrement = 0.0005
+	ChanceOfIncrement = 0.01
 
 	// How much of a cell's value should spill out to neighbours every tick
 	// This is in relation to half of the difference between the cell's value and the neighbour's value
-	SpillRate = 1
+	SpillRate = 0.1
 
 	// TODO: variable, how frequently per second should something update
 	// or, how many things should update per second
 	// Use this to calcualte UpdatesPerSecond
 
 	// How much will it increment by
-	IncrementAmount = 255
+	IncrementAmount = 100
 
 	// How many ticks to attempt every second
 	// This can be super high, but would then essentially fill up immediatelly
-	TicksPerSecond = 24 // TODO: allow this to be < 1
+	TicksPerSecond = 12 // TODO: allow this to be < 1
 
 	// How often to refresh the view
 	FramesPerSecond = 24
 
 	// Whether to display cell value or not
-	DisplayValue = false
+	DisplayValue = true
 
 	// Whether to enable colors for cells
-	EnableColor = true
+	EnableColor = false
 )
 
 var (
