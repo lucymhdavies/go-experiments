@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 // TODO:
@@ -109,16 +107,9 @@ func (w *World) randomIncrementMatrix() {
 		cellsToIncrement = 1
 	}
 
-	log.Debugf("Cells to incrmeent: %d", cellsToIncrement)
-
 	for i := 0; i < cellsToIncrement; i++ {
 		randY := rand.Intn(w.height)
 		randX := rand.Intn(w.width)
-
-		log.WithFields(log.Fields{
-			"x": randX,
-			"y": randY,
-		}).Debugf("Incrementing")
 
 		w.matrix[randX][randY] = w.matrix[randX][randY] + IncrementAmount
 	}

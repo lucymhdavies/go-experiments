@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
@@ -63,9 +62,6 @@ func update(screen *ebiten.Image) error {
 }
 
 func main() {
-	if false {
-		log.SetLevel(log.DebugLevel)
-	}
 
 	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "Some Kinda Grid Flow Thing"); err != nil {
 		panic(err)
