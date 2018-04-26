@@ -55,38 +55,49 @@ func (w *World) Draw(pix []byte) {
 			color := transformValToColor(w.matrix[x][y])
 
 			// Red
-			pix[idx] = 0
+			pix[idx] = color[0]
 			// Green
-			pix[idx+1] = color
+			pix[idx+1] = color[1]
 			// Blue
-			pix[idx+2] = color
+			pix[idx+2] = color[2]
 			// Alpha
-			pix[idx+3] = color
+			pix[idx+3] = color[3]
 		}
 	}
 }
 
-func transformValToColor(cellValue float32) byte {
+// transformValToColor returns a byte 4-tuple, denoting a color code
+func transformValToColor(cellValue float32) [4]byte {
 
 	if WeirdMode {
 		// https://math.stackexchange.com/a/377174
-		colorCode := byte(cellValue * (255 / float32(MaxDisplay)))
+		color := byte(cellValue * (255 / float32(MaxDisplay)))
 
 		// make sure it's within range
-		colorCode = byte(math.Max(float64(colorCode), 0))
-		colorCode = byte(math.Min(float64(colorCode), 255))
+		color = byte(math.Max(float64(color), 0))
+		color = byte(math.Min(float64(color), 255))
 
-		return byte(colorCode)
+		return [4]byte{
+			0,
+			byte(color),
+			byte(color),
+			255,
+		}
 	} else {
 
 		// https://math.stackexchange.com/a/377174
-		colorCode := float32(cellValue * (255 / float32(MaxDisplay)))
+		color := float32(cellValue * (255 / float32(MaxDisplay)))
 
 		// make sure it's within range
-		colorCode = float32(math.Max(float64(colorCode), 0))
-		colorCode = float32(math.Min(float64(colorCode), 255))
+		color = float32(math.Max(float64(color), 0))
+		color = float32(math.Min(float64(color), 255))
 
-		return byte(colorCode)
+		return [4]byte{
+			0,
+			byte(color),
+			byte(color),
+			255,
+		}
 	}
 
 }
