@@ -24,8 +24,18 @@ const (
 	// This is in relation to half of the difference between the cell's value and the neighbour's value
 	SpillRate = 1
 
-	// At this value, pixel will be entirely white
+	// At this value, pixel will be static
+	// Only applies to normal color mode
 	MaxDisplay = 1000
+
+	// At this value, we cycle
+	// For weird, this is  RGB := Modulo(value, CycleValue)
+	// For spiral, this is Hue := Modulo(value, CycleValue)
+	CycleValue = 1000
+
+	// HSV Value Cycle ratio
+	// i.e. for 0.2, we will cycle hue 5 times per value cycle
+	SpiralValueCycleRatio = 0.2
 
 	// How much will it increment by
 	IncrementAmount = 100000

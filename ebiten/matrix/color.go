@@ -36,7 +36,7 @@ func Float32ToColor(cellValue float32) Color {
 // Keeping it available as an option, because it looks cool
 func float32ToColorWeird(cellValue float32) Color {
 	// https://math.stackexchange.com/a/377174
-	color := byte(cellValue * (255 / float32(MaxDisplay)))
+	color := byte(cellValue * (255 / float32(CycleValue)))
 
 	// make sure it's within range
 	color = byte(math.Max(float64(color), 0))
@@ -62,10 +62,10 @@ func float32ToColorSpiral(cellValue float32) Color {
 	// Now map 0-Max to 0-1
 	// MaxDisplay in this case is the value at which we get a new cycle
 	// Modulo 1, so we're always between 0 and 1
-	hue := math.Mod(float64(cellValue*(1/float32(MaxDisplay))), 1)
+	hue := math.Mod(float64(cellValue*(1/float32(CycleValue))), 1)
 
 	// Do the same for Val, but it takes 5 times as long to cycle
-	val := math.Mod(float64(cellValue*(0.2/float32(MaxDisplay))), 1)
+	val := math.Mod(float64(cellValue*(SpiralValueCycleRatio/float32(CycleValue))), 1)
 
 	// TODO: do the same for sat, but take 25 times as long?
 	// also, 1-sat
