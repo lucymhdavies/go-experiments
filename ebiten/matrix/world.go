@@ -91,6 +91,19 @@ func (w *World) randomIncrementMatrix() {
 
 }
 
+// TotalValue returns the total value of all cells
+func (w *World) TotalValue() float32 {
+	val := float32(0)
+
+	for col := range w.matrix {
+		for row := range w.matrix[col] {
+			val = val + w.matrix[col][row]
+		}
+	}
+
+	return val
+}
+
 // TODO: waves?
 // i.e. when calculating spill, consider previous spill in that direction
 // Or, perhaps track not only value, but pressure

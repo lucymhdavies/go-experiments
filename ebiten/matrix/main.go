@@ -31,7 +31,7 @@ const (
 	IncrementAmount = 100000
 
 	// How to render colors. See color.go
-	ColorMode = colorWeird
+	ColorMode = colorSpiral
 )
 
 var (
@@ -59,12 +59,23 @@ func update(screen *ebiten.Image) error {
 	// TODO: keyboard to toggle debugprint
 	x, y := ebiten.CursorPosition()
 	val, _ := world.GetVal(x, y)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %.2f\nX: %d, Y: %d, Val: %.2f", ebiten.CurrentFPS(), x, y, val))
+	totalVal := world.TotalValue()
+	ebitenutil.DebugPrint(
+		screen,
+		fmt.Sprintf("FPS: %.2f\nX: %d, Y: %d, Val: %.2f\nTotal: %g",
+			ebiten.CurrentFPS(),
+			x, y, val,
+			totalVal,
+		),
+	)
 
 	return nil
 }
 
 func main() {
+	// TODO: cobra? viper? some way of getting config vars
+
+	ebiten.SetRunnableInBackground(true)
 
 	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "Some Kinda Grid Flow Thing"); err != nil {
 		panic(err)
