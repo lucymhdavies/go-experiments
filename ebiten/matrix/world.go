@@ -68,21 +68,26 @@ func (w *World) Draw(pix []byte) {
 
 func transformValToColor(cellValue float32) byte {
 
-	// 	// https://math.stackexchange.com/a/377174
-	// 	colorCode := byte(cellValue * (255 / float32(MaxDisplay)))
-	//
-	// 	// make sure it's within range
-	// 	colorCode = byte(math.Max(float64(colorCode), 0))
-	// 	colorCode = byte(math.Min(float64(colorCode), 255))
+	if WeirdMode {
+		// https://math.stackexchange.com/a/377174
+		colorCode := byte(cellValue * (255 / float32(MaxDisplay)))
 
-	// https://math.stackexchange.com/a/377174
-	colorCode := float32(cellValue * (255 / float32(MaxDisplay)))
+		// make sure it's within range
+		colorCode = byte(math.Max(float64(colorCode), 0))
+		colorCode = byte(math.Min(float64(colorCode), 255))
 
-	// make sure it's within range
-	colorCode = float32(math.Max(float64(colorCode), 0))
-	colorCode = float32(math.Min(float64(colorCode), 255))
+		return byte(colorCode)
+	} else {
 
-	return byte(colorCode)
+		// https://math.stackexchange.com/a/377174
+		colorCode := float32(cellValue * (255 / float32(MaxDisplay)))
+
+		// make sure it's within range
+		colorCode = float32(math.Max(float64(colorCode), 0))
+		colorCode = float32(math.Min(float64(colorCode), 255))
+
+		return byte(colorCode)
+	}
 
 }
 
@@ -115,6 +120,11 @@ func (w *World) randomIncrementMatrix() {
 	}
 
 }
+
+// TODO: waves?
+// i.e. when calculating spill, consider previous spill in that direction
+// Or, perhaps track not only value, but pressure
+// higher pressure = higher spill
 
 // TODO: this is horrible; refactor it
 // spillToNeighbours will take some of a cell's value and spill it out to neighbours
