@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 )
 
@@ -52,54 +51,14 @@ func (w *World) Draw(pix []byte) {
 		for x := 0; x < w.width; x++ {
 			idx := 4*y*w.width + 4*x
 
-			color := transformValToColor(w.matrix[x][y])
+			color := Float32ToColor(w.matrix[x][y])
 
-			// Red
-			pix[idx] = color[0]
-			// Green
-			pix[idx+1] = color[1]
-			// Blue
-			pix[idx+2] = color[2]
-			// Alpha
-			pix[idx+3] = color[3]
+			pix[idx] = color.R
+			pix[idx+1] = color.G
+			pix[idx+2] = color.B
+			pix[idx+3] = color.A
 		}
 	}
-}
-
-// transformValToColor returns a byte 4-tuple, denoting a color code
-func transformValToColor(cellValue float32) [4]byte {
-
-	if WeirdMode {
-		// https://math.stackexchange.com/a/377174
-		color := byte(cellValue * (255 / float32(MaxDisplay)))
-
-		// make sure it's within range
-		color = byte(math.Max(float64(color), 0))
-		color = byte(math.Min(float64(color), 255))
-
-		return [4]byte{
-			0,
-			byte(color),
-			byte(color),
-			255,
-		}
-	} else {
-
-		// https://math.stackexchange.com/a/377174
-		color := float32(cellValue * (255 / float32(MaxDisplay)))
-
-		// make sure it's within range
-		color = float32(math.Max(float64(color), 0))
-		color = float32(math.Min(float64(color), 255))
-
-		return [4]byte{
-			0,
-			byte(color),
-			byte(color),
-			255,
-		}
-	}
-
 }
 
 // Get val at specified coord, converted to int

@@ -29,6 +29,9 @@ const (
 
 	// How much will it increment by
 	IncrementAmount = 100000
+
+	// How to render colors. See color.go
+	ColorMode = colorWeird
 )
 
 var (
