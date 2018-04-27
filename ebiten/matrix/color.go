@@ -70,7 +70,7 @@ func float32ToColorSpiral(cellValue float32) Color {
 	// Now map 0-Max to 0-1
 	// MaxDisplay in this case is the value at which we get a new cycle
 	// Modulo 1, so we're always between 0 and 1
-	hue := math.Mod(float64(cellValue*(1/float32(CycleValue))), 1)
+	hue := math.Mod(float64(cellValue*(SpiralHueCycleRatio/float32(CycleValue))), 1)
 
 	// Do the same for Val, but it takes 5 times as long to cycle
 	val := math.Mod(float64(cellValue*(SpiralValueCycleRatio/float32(CycleValue))), 1)

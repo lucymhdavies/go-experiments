@@ -33,12 +33,13 @@ const (
 	// For spiral, this is Hue := Modulo(value, CycleValue)
 	CycleValue = 1000
 
-	// HSV Value Cycle ratio
-	// i.e. for 0.2, we will cycle hue 5 times per value cycle
-	SpiralValueCycleRatio = 0.2
+	// HSV Value Cycle ratios
+	// e.g. for 1 0.2, we will hue value 5 times per value cycle, and cycle value once per CycleValue
+	SpiralHueCycleRatio   = 0.1
+	SpiralValueCycleRatio = 1
 
 	// How much will it increment by
-	IncrementAmount = 100000
+	IncrementAmount = 1000000
 
 	// How to render colors. See color.go
 	ColorMode = colorSpiral
