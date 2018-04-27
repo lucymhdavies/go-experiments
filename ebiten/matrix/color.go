@@ -117,7 +117,8 @@ type ColorHSV struct {
 	H, S, V float64
 }
 
-func (c *ColorHSV) RGB() *Color {
+func (c ColorHSV) RGB() Color {
+
 	var r, g, b float64
 	if c.S == 0 { //HSV from 0 to 1
 		r = c.V * 255
@@ -163,12 +164,13 @@ func (c *ColorHSV) RGB() *Color {
 		g = g * 255
 		b = b * 255
 	}
-	rgb := &Color{
+	rgb := Color{
 		R: uint8(r),
 		G: uint8(g),
 		B: uint8(b),
 		A: 255,
 	}
+
 	return rgb
 
 }
