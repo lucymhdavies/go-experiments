@@ -35,6 +35,14 @@ func Float32ToColor(cellValue float32) Color {
 // Early version of transformValToColor introduced a weird rendering error
 // Keeping it available as an option, because it looks cool
 func float32ToColorWeird(cellValue float32) Color {
+
+	// Originally, this "worked" on desktop, due to byte overflow.
+	// In GopherJS, this just behaves like Normal, probably because of how
+	// Javascript only has a single Number type.
+	//
+	// Simulate the original byte overflow with a modulo
+	cellValue = float32(math.Mod(float64(cellValue), CycleValue))
+
 	// https://math.stackexchange.com/a/377174
 	color := byte(cellValue * (255 / float32(CycleValue)))
 
