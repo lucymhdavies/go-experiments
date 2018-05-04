@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
+
+	"github.com/hajimehoshi/ebiten"
 )
 
 // TODO:
@@ -14,6 +17,7 @@ type Matrix = [][]float32
 type World struct {
 	matrix        Matrix // [x][y]
 	width, height int    // convenience vars
+	StoredValue   float32
 }
 
 // newMatrix initialises a new empty matrix
@@ -35,12 +39,31 @@ func NewWorld(width, height int, maxInitLiveCells int) *World {
 	return w
 }
 
+func (w *World) Reset() error {
+	w.matrix = newMatrix(w.width, w.height)
+	w.StoredValue = 0
+	randomIncrements = false
+
+	return nil
+}
+
+var (
+	randomIncrements = false // default to off
+)
+
 // Update game state by one tick.
 func (w *World) Update() error {
 
-	// Randomly Increment
+	// Spill to neighbours
 	w.spillToNeighbours()
-	w.randomIncrementMatrix()
+
+	// Randomly Increment
+	if randomIncrements {
+		w.randomIncrementMatrix()
+	}
+
+	// Respond to clicks
+	w.respondToInput()
 
 	return nil
 }
@@ -87,6 +110,72 @@ func (w *World) randomIncrementMatrix() {
 		randX := rand.Intn(w.width)
 
 		w.matrix[randX][randY] = w.matrix[randX][randY] + IncrementAmount
+	}
+
+}
+
+// Keep track of which keys have been pressed, but not released
+var (
+	keySpaceDown = false
+	keyRDown     = false
+)
+
+// respondToInput responds to user input: clicks, key presses, etc
+func (w *World) respondToInput() {
+
+	// TODO: do this in a for loop, as per original version
+	x, y := ebiten.CursorPosition()
+	if x >= 0 && x < w.width && y >= 0 && y < w.height {
+
+		// Left click, or Q: incremement
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeyQ) {
+			if RestrictIncrmementToStoredValue {
+				// only incremement if we have stored some value already
+				incrementAmount := float32(math.Min(float64(IncrementAmount), float64(w.StoredValue)))
+
+				w.matrix[x][y] = w.matrix[x][y] + incrementAmount
+				w.StoredValue = w.StoredValue - incrementAmount
+			} else {
+				w.matrix[x][y] = w.matrix[x][y] + IncrementAmount
+			}
+		}
+
+		// Right click, or W: decremement
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) || ebiten.IsKeyPressed(ebiten.KeyW) {
+			if RestrictIncrmementToStoredValue {
+
+				decrementAmount := float32(math.Min(float64(IncrementAmount), float64(w.matrix[x][y])))
+
+				// TODO: do not decrememnt beyond 0
+				w.matrix[x][y] = w.matrix[x][y] - decrementAmount
+				w.StoredValue = w.StoredValue + decrementAmount
+			} else {
+				w.matrix[x][y] = w.matrix[x][y] - IncrementAmount
+			}
+		}
+
+		// toggle random incremements
+		if ebiten.IsKeyPressed(ebiten.KeySpace) {
+			keySpaceDown = true
+		} else {
+			// If space key was previously down, toggle random incremements
+			if keySpaceDown {
+				randomIncrements = !randomIncrements
+			}
+			keySpaceDown = false
+		}
+
+		// Reset
+		if ebiten.IsKeyPressed(ebiten.KeyR) {
+			keyRDown = true
+		} else {
+			// If R key was previously down, reset
+			if keyRDown {
+				w.Reset()
+			}
+			keyRDown = false
+		}
+
 	}
 
 }

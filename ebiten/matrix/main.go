@@ -43,6 +43,9 @@ const (
 
 	// How to render colors. See color.go
 	ColorMode = colorSpiral
+
+	// Whether to restrict manual increments by stored value
+	RestrictIncrmementToStoredValue = true
 )
 
 var (
@@ -71,12 +74,14 @@ func update(screen *ebiten.Image) error {
 	x, y := ebiten.CursorPosition()
 	val, _ := world.GetVal(x, y)
 	totalVal := world.TotalValue()
+	storedVal := world.StoredValue
 	ebitenutil.DebugPrint(
 		screen,
-		fmt.Sprintf("FPS: %.2f\nX: %d, Y: %d, Val: %.2f\nTotal: %g",
+		fmt.Sprintf("FPS: %.2f\nX: %d, Y: %d, Val: %.2f\nTotal: %g\nStored: %g",
 			ebiten.CurrentFPS(),
 			x, y, val,
 			totalVal,
+			storedVal,
 		),
 	)
 
