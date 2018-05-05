@@ -17,7 +17,7 @@ const (
 
 	// How many of the cells will increment every tick
 	// TODO: this should be a variable, inversely proportional to the sum of the matrix
-	ChanceOfIncrement = 1
+	ChanceOfIncrement = 1000
 	// TODO: variable for how many cells to incrememnt every second
 
 	// How much of a cell's value should spill out to neighbours every tick
@@ -39,7 +39,9 @@ const (
 	SpiralValueCycleRatio = 1
 
 	// How much will it increment by
-	IncrementAmount = 1000000
+	IncrementAmount       = 10000
+	ManualIncrementAmount = IncrementAmount * 100
+	ManualDecrementAmount = IncrementAmount * 100
 
 	// How to render colors. See color.go
 	ColorMode = colorSpiral
@@ -48,7 +50,9 @@ const (
 	RestrictIncrementToStoredValue = true
 	// TODO: once I've implemented pressure in addition to value
 	// this will make more sense
-	RestrictDecrementToMinZero = false
+	RestrictDecrementToMinZero = true
+	// TODO: ManualIncrementRange ?
+	// TODO: ManualDecrementRange ?
 )
 
 var (

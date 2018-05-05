@@ -100,9 +100,11 @@ func (w *World) randomIncrementMatrix() {
 
 	// TODO: do this in a for loop, as per original version
 
+	// TODO: option for cell's chance of incrementing to be inversely proportional to its value
+
 	cellsToIncrement := 0
 	if rand.Float64() < ChanceOfIncrement {
-		cellsToIncrement = 1
+		cellsToIncrement = 10
 	}
 
 	for i := 0; i < cellsToIncrement; i++ {
@@ -131,12 +133,12 @@ func (w *World) respondToInput() {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeyQ) {
 			if RestrictIncrementToStoredValue {
 				// only incremement if we have stored some value already
-				incrementAmount := math.Min(float64(IncrementAmount), w.StoredValue)
+				incrementAmount := math.Min(float64(ManualIncrementAmount), w.StoredValue)
 
 				w.matrix[x][y] = w.matrix[x][y] + incrementAmount
 				w.StoredValue = w.StoredValue - incrementAmount
 			} else {
-				w.matrix[x][y] = w.matrix[x][y] + IncrementAmount
+				w.matrix[x][y] = w.matrix[x][y] + ManualIncrementAmount
 			}
 		}
 
@@ -144,18 +146,21 @@ func (w *World) respondToInput() {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) || ebiten.IsKeyPressed(ebiten.KeyW) {
 			if RestrictIncrementToStoredValue {
 
-				decrementAmount := float64(IncrementAmount)
+				decrementAmount := float64(ManualDecrementAmount)
 
 				if RestrictDecrementToMinZero {
-					decrementAmount = math.Min(float64(IncrementAmount), w.matrix[x][y])
+					decrementAmount = math.Min(float64(ManualDecrementAmount), w.matrix[x][y])
 				}
 
 				w.matrix[x][y] = w.matrix[x][y] - decrementAmount
 				w.StoredValue = w.StoredValue + decrementAmount
 			} else {
-				w.matrix[x][y] = w.matrix[x][y] - IncrementAmount
+				w.matrix[x][y] = w.matrix[x][y] - ManualDecrementAmount
 			}
 		}
+
+		// TODO: place a permanent incrementor
+		// TODO: place a permanent decrementer
 
 		// toggle random incremements
 		if ebiten.IsKeyPressed(ebiten.KeySpace) {
