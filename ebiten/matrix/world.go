@@ -12,19 +12,19 @@ import (
 // we currently have x,y coords, and a single value
 // how about x,y coords, and r,g,b values?
 
-type Matrix = [][]float32
+type Matrix = [][]float64
 
 type World struct {
 	matrix        Matrix // [x][y]
 	width, height int    // convenience vars
-	StoredValue   float32
+	StoredValue   float64
 }
 
 // newMatrix initialises a new empty matrix
 func newMatrix(width, height int) Matrix {
 	a := make(Matrix, width)
 	for i := 0; i < width; i++ {
-		a[i] = make([]float32, height)
+		a[i] = make([]float64, height)
 	}
 	return a
 }
@@ -74,7 +74,7 @@ func (w *World) Draw(pix []byte) {
 		for x := 0; x < w.width; x++ {
 			idx := 4*y*w.width + 4*x
 
-			color := Float32ToColor(w.matrix[x][y])
+			color := Float64ToColor(w.matrix[x][y])
 
 			pix[idx] = color.R
 			pix[idx+1] = color.G
@@ -85,7 +85,7 @@ func (w *World) Draw(pix []byte) {
 }
 
 // Get val at specified coord, converted to int
-func (w *World) GetVal(x, y int) (float32, error) {
+func (w *World) GetVal(x, y int) (float64, error) {
 	m := w.matrix
 
 	if x >= 0 && x < w.width && y >= 0 && y < w.height {
@@ -101,7 +101,7 @@ func (w *World) randomIncrementMatrix() {
 	// TODO: do this in a for loop, as per original version
 
 	cellsToIncrement := 0
-	if rand.Float32() < ChanceOfIncrement {
+	if rand.Float64() < ChanceOfIncrement {
 		cellsToIncrement = 1
 	}
 
@@ -131,7 +131,7 @@ func (w *World) respondToInput() {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeyQ) {
 			if RestrictIncrementToStoredValue {
 				// only incremement if we have stored some value already
-				incrementAmount := float32(math.Min(float64(IncrementAmount), float64(w.StoredValue)))
+				incrementAmount := math.Min(float64(IncrementAmount), w.StoredValue)
 
 				w.matrix[x][y] = w.matrix[x][y] + incrementAmount
 				w.StoredValue = w.StoredValue - incrementAmount
@@ -144,13 +144,12 @@ func (w *World) respondToInput() {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) || ebiten.IsKeyPressed(ebiten.KeyW) {
 			if RestrictIncrementToStoredValue {
 
-				decrementAmount := float32(IncrementAmount)
+				decrementAmount := float64(IncrementAmount)
 
 				if RestrictDecrementToMinZero {
-					decrementAmount = float32(math.Min(float64(IncrementAmount), float64(w.matrix[x][y])))
+					decrementAmount = math.Min(float64(IncrementAmount), w.matrix[x][y])
 				}
 
-				// TODO: do not decrememnt beyond 0
 				w.matrix[x][y] = w.matrix[x][y] - decrementAmount
 				w.StoredValue = w.StoredValue + decrementAmount
 			} else {
@@ -185,8 +184,8 @@ func (w *World) respondToInput() {
 }
 
 // TotalValue returns the total value of all cells
-func (w *World) TotalValue() float32 {
-	val := float32(0)
+func (w *World) TotalValue() float64 {
+	val := float64(0)
 
 	for col := range w.matrix {
 		for row := range w.matrix[col] {
@@ -213,9 +212,9 @@ func (w *World) spillToNeighbours() {
 	numCols := w.width
 
 	// Dupe the matrix, to store spill values
-	spillMatrix := make([][]float32, numCols)
+	spillMatrix := make([][]float64, numCols)
 	for i := range spillMatrix {
-		spillMatrix[i] = make([]float32, numRows)
+		spillMatrix[i] = make([]float64, numRows)
 	}
 
 	// TODO: keep track of non-empty cells
@@ -230,10 +229,10 @@ func (w *World) spillToNeighbours() {
 
 			// Assume we cannot spill anywhere
 			var spillDirections uint8 = 0
-			var spillEastAmount float32 = 0
-			var spillWestAmount float32 = 0
-			var spillNorthAmount float32 = 0
-			var spillSouthAmount float32 = 0
+			var spillEastAmount float64 = 0
+			var spillWestAmount float64 = 0
+			var spillNorthAmount float64 = 0
+			var spillSouthAmount float64 = 0
 
 			// TODO: loop?
 
@@ -304,28 +303,28 @@ func (w *World) spillToNeighbours() {
 
 			if spillNorthAmount > 0 {
 				// Spill North
-				spillNorthAmount = spillNorthAmount / float32(spillDirections)
+				spillNorthAmount = spillNorthAmount / float64(spillDirections)
 				spillMatrix[col][row] = spillMatrix[col][row] - spillNorthAmount
 				spillMatrix[col][row-1] = spillMatrix[col][row-1] + spillNorthAmount
 			}
 
 			if spillSouthAmount > 0 {
 				// Spill South
-				spillSouthAmount = spillSouthAmount / float32(spillDirections)
+				spillSouthAmount = spillSouthAmount / float64(spillDirections)
 				spillMatrix[col][row] = spillMatrix[col][row] - spillSouthAmount
 				spillMatrix[col][row+1] = spillMatrix[col][row+1] + spillSouthAmount
 			}
 
 			if spillEastAmount > 0 {
 				// Spill East
-				spillEastAmount = spillEastAmount / float32(spillDirections)
+				spillEastAmount = spillEastAmount / float64(spillDirections)
 				spillMatrix[col][row] = spillMatrix[col][row] - spillEastAmount
 				spillMatrix[col+1][row] = spillMatrix[col+1][row] + spillEastAmount
 			}
 
 			if spillWestAmount > 0 {
 				// Spill West
-				spillWestAmount = spillWestAmount / float32(spillDirections)
+				spillWestAmount = spillWestAmount / float64(spillDirections)
 				spillMatrix[col][row] = spillMatrix[col][row] - spillWestAmount
 				spillMatrix[col-1][row] = spillMatrix[col-1][row] + spillWestAmount
 			}

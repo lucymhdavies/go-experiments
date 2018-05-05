@@ -15,18 +15,18 @@ const (
 )
 
 // transformValToColor returns a byte 4-tuple, denoting a color code
-func Float32ToColor(cellValue float32) Color {
+func Float64ToColor(cellValue float64) Color {
 
 	switch ColorMode {
 
 	case colorWeird:
-		return float32ToColorWeird(cellValue)
+		return float64ToColorWeird(cellValue)
 
 	case colorSpiral:
-		return float32ToColorSpiral(cellValue)
+		return float64ToColorSpiral(cellValue)
 
 	default:
-		return float32ToColorNormal(cellValue)
+		return float64ToColorNormal(cellValue)
 
 	}
 
@@ -34,17 +34,17 @@ func Float32ToColor(cellValue float32) Color {
 
 // Early version of transformValToColor introduced a weird rendering error
 // Keeping it available as an option, because it looks cool
-func float32ToColorWeird(cellValue float32) Color {
+func float64ToColorWeird(cellValue float64) Color {
 
 	// Originally, this "worked" on desktop, due to byte overflow.
 	// In GopherJS, this just behaves like Normal, probably because of how
 	// Javascript only has a single Number type.
 	//
 	// Simulate the original byte overflow with a modulo
-	cellValue = float32(math.Mod(float64(cellValue), CycleValue))
+	cellValue = math.Mod(cellValue, float64(CycleValue))
 
 	// https://math.stackexchange.com/a/377174
-	color := byte(cellValue * (255 / float32(CycleValue)))
+	color := byte(cellValue * (255 / float64(CycleValue)))
 
 	// make sure it's within range
 	color = byte(math.Max(float64(color), 0))
@@ -60,20 +60,20 @@ func float32ToColorWeird(cellValue float32) Color {
 
 // An HSV spiral type thing
 // i.e. start at black, rotate around hue, and gradually increase value
-func float32ToColorSpiral(cellValue float32) Color {
+func float64ToColorSpiral(cellValue float64) Color {
 
 	// First, need to be > 0
-	cellValue = float32(math.Max(float64(cellValue), 0))
+	cellValue = math.Max(cellValue, 0)
 
 	// mod by MaxValue?
 
 	// Now map 0-Max to 0-1
 	// MaxDisplay in this case is the value at which we get a new cycle
 	// Modulo 1, so we're always between 0 and 1
-	hue := math.Mod(float64(cellValue*(SpiralHueCycleRatio/float32(CycleValue))), 1)
+	hue := math.Mod(cellValue*(SpiralHueCycleRatio/float64(CycleValue)), 1)
 
 	// Do the same for Val, but it takes 5 times as long to cycle
-	val := math.Mod(float64(cellValue*(SpiralValueCycleRatio/float32(CycleValue))), 1)
+	val := math.Mod(cellValue*(SpiralValueCycleRatio/float64(CycleValue)), 1)
 
 	// TODO: do the same for sat, but take 25 times as long?
 	// also, 1-sat
@@ -95,13 +95,13 @@ func float32ToColorSpiral(cellValue float32) Color {
 }
 
 // normal, single color mode
-func float32ToColorNormal(cellValue float32) Color {
+func float64ToColorNormal(cellValue float64) Color {
 	// https://math.stackexchange.com/a/377174
-	color := float32(cellValue * (255 / float32(MaxDisplay)))
+	color := cellValue * (255 / float64(MaxDisplay))
 
 	// make sure it's within range
-	color = float32(math.Max(float64(color), 0))
-	color = float32(math.Min(float64(color), 255))
+	color = math.Max(color, 0)
+	color = math.Min(color, 255)
 
 	return Color{
 		R: 0,
