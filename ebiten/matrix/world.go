@@ -129,7 +129,7 @@ func (w *World) respondToInput() {
 
 		// Left click, or Q: incremement
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeyQ) {
-			if RestrictIncrmementToStoredValue {
+			if RestrictIncrementToStoredValue {
 				// only incremement if we have stored some value already
 				incrementAmount := float32(math.Min(float64(IncrementAmount), float64(w.StoredValue)))
 
@@ -142,9 +142,13 @@ func (w *World) respondToInput() {
 
 		// Right click, or W: decremement
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) || ebiten.IsKeyPressed(ebiten.KeyW) {
-			if RestrictIncrmementToStoredValue {
+			if RestrictIncrementToStoredValue {
 
-				decrementAmount := float32(math.Min(float64(IncrementAmount), float64(w.matrix[x][y])))
+				decrementAmount := float32(IncrementAmount)
+
+				if RestrictDecrementToMinZero {
+					decrementAmount = float32(math.Min(float64(IncrementAmount), float64(w.matrix[x][y])))
+				}
 
 				// TODO: do not decrememnt beyond 0
 				w.matrix[x][y] = w.matrix[x][y] - decrementAmount

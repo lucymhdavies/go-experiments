@@ -45,7 +45,10 @@ const (
 	ColorMode = colorSpiral
 
 	// Whether to restrict manual increments by stored value
-	RestrictIncrmementToStoredValue = true
+	RestrictIncrementToStoredValue = true
+	// TODO: once I've implemented pressure in addition to value
+	// this will make more sense
+	RestrictDecrementToMinZero = false
 )
 
 var (
