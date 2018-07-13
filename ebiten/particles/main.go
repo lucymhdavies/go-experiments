@@ -6,24 +6,38 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/golang/geo/r3"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 type Config struct {
 	ScreenWidth  int
 	ScreenHeight int
+	ScreenScale  float64
 }
+
+// TODO: new config struct, something like this:
+
+// type Config struct {
+// 	Screen struct {
+// 		Height int     `json:"Height"`
+// 		Width  int     `json:"Width"`
+// 		Scale  float64 `json:"Scale"`
+// 	} `json:"Screen"`
+// 	Particles struct {
+// 		Count int `json:"Count"`
+// 	} `json:"Particles"`
+// }
 
 var (
 	cfg *Config = &Config{
-		ScreenHeight: 480,
-		ScreenWidth:  640,
+		ScreenWidth:  1280,
+		ScreenHeight: 960,
+		ScreenScale:  1,
 	}
 
-	// TODO: Array of these
-	particles []*Particle
+	particles = []*Particle{}
 )
 
 func init() {
@@ -31,18 +45,6 @@ func init() {
 
 	dot, _ = ebiten.NewImage(1, 1, ebiten.FilterNearest)
 	dot.Fill(color.White)
-
-	// TODO: a bunch of random particles, with random velocities
-	particles = []*Particle{}
-
-	for i := 0; i < 25000; i++ {
-		particles = append(particles,
-			NewParticle(
-				rand.Float64()*float64(cfg.ScreenWidth),
-				rand.Float64()*float64(cfg.ScreenHeight),
-				0, 0, 0, 0, 0),
-		)
-	}
 
 }
 
@@ -53,39 +55,62 @@ func main() {
 
 	ebiten.SetRunnableInBackground(true)
 
-	if err := ebiten.Run(update, cfg.ScreenWidth, cfg.ScreenHeight, 2, "Particles!"); err != nil {
+	// Simulate the physics independently of game tick, to allow varying simulation speed
+	go physicsTicks()
+
+	if err := ebiten.Run(update, cfg.ScreenWidth, cfg.ScreenHeight, cfg.ScreenScale, "Particles!"); err != nil {
 		panic(err)
 	}
 }
 
 func update(screen *ebiten.Image) error {
 
-	if ebiten.IsRunningSlowly() {
+	// Handle input
+	_ = input()
+
+	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
 	screen.Fill(color.Black)
 
-	// Attract towards mouse cursor
-	cX, cY := ebiten.CursorPosition()
-	target := r3.Vector{X: float64(cX), Y: float64(cY)}
-
 	for _, particle := range particles {
-		_ = particle.Attract(target)
-
-		/*
-			// Attract to all other particles
-			for _, pTarget := range particles {
-				_ = particle.Attract(pTarget.Pos)
-			}
-		*/
-
-		_ = particle.Update()
 		_ = particle.Draw(screen)
 	}
 
 	x, y := ebiten.CursorPosition()
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %.2f\nX: %d, Y: %d", ebiten.CurrentFPS(), x, y))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf(
+		`FPS: %.2f
+X: %d, Y: %d
+Particles: %d`,
+		ebiten.CurrentFPS(),
+		x, y,
+		len(particles),
+	),
+	)
+
+	return nil
+}
+
+func input() error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		switch cfg.ScreenScale {
+		case 1:
+			cfg.ScreenScale = 2
+			cfg.ScreenWidth = 640
+			cfg.ScreenHeight = 480
+		case 2:
+			cfg.ScreenScale = 1
+			cfg.ScreenWidth = 1280
+			cfg.ScreenHeight = 960
+		default:
+			panic("not reached")
+		}
+	}
+	ebiten.SetScreenSize(cfg.ScreenWidth, cfg.ScreenHeight)
+	ebiten.SetScreenScale(cfg.ScreenScale)
+
+	// TODO: Increase/Decrease number of particles
 
 	return nil
 }

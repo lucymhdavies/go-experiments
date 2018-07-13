@@ -9,11 +9,23 @@ import (
 // 	X, Y float64
 // }
 
-type Circle struct {
-	Pos r3.Vector
-	R   float64
+var (
+	colorWhite = Color{
+		R: 1.0,
+		G: 1.0,
+		B: 1.0,
+		A: 0.5,
+	}
+)
 
-	// TODO: color
+type Color struct {
+	R, G, B, A float64
+}
+
+type Circle struct {
+	Pos    r3.Vector
+	Radius float64
+	Color  Color
 }
 
 func NewCircle(x, y, r float64) Circle {
@@ -22,7 +34,8 @@ func NewCircle(x, y, r float64) Circle {
 			X: x,
 			Y: y,
 		},
-		R: r,
+		Radius: r,
+		Color:  colorWhite,
 	}
 }
 
@@ -32,7 +45,7 @@ var (
 
 func (c Circle) Draw(screen *ebiten.Image) error {
 	op := &ebiten.DrawImageOptions{}
-	op.ColorM.Scale(200.0/255.0, 200.0/255.0, 200.0/255.0, 1)
+	op.ColorM.Scale(c.Color.R, c.Color.G, c.Color.B, c.Color.A)
 	op.GeoM.Reset()
 	op.GeoM.Translate(c.Pos.X, c.Pos.Y)
 
