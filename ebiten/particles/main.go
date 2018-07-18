@@ -75,24 +75,45 @@ func update(screen *ebiten.Image) error {
 	screen.Fill(color.Black)
 
 	for _, particle := range particles {
+		// If it's just died, skip it
+		if particle == nil {
+			continue
+		}
+
+		// Still alive, so draw it
 		_ = particle.Draw(screen)
 	}
 
 	x, y := ebiten.CursorPosition()
-	ebitenutil.DebugPrint(screen, fmt.Sprintf(
-		`FPS: %.2f
+
+	if !inMenu {
+		debugText = fmt.Sprintf(
+			`FPS: %.2f
 X: %d, Y: %d
-Particles: %d`,
-		ebiten.CurrentFPS(),
-		x, y,
-		len(particles),
-	),
-	)
+Particles: %d / %d`,
+			ebiten.CurrentFPS(),
+			x, y,
+			len(particles), targetNumParticles,
+		)
+	}
+
+	ebitenutil.DebugPrint(screen, debugText)
 
 	return nil
 }
 
+var inMenu = false
+var debugText = ""
+
 func input() error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		inMenu = !inMenu
+	}
+
+	if inMenu {
+		return menuInput()
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
 		switch cfg.ScreenScale {
 		case 1:

@@ -10,13 +10,24 @@ type Particle struct {
 	Circle
 	Velocity     r3.Vector
 	Acceleration r3.Vector
+	TTL          int
 }
+
+// TODO: stick these in Config
+
+var (
+	// Infinite = -1
+	initialParticleTTL = 200
+	deleteOnBounce     = true
+)
 
 func NewParticle(x, y, r, dx, dy, ddx, ddy float64) *Particle {
 	return &Particle{
 		Circle:       NewCircle(x, y, r),
 		Velocity:     r3.Vector{X: dx, Y: dy},
 		Acceleration: r3.Vector{X: ddx, Y: ddy},
+
+		TTL: initialParticleTTL,
 	}
 }
 
@@ -45,6 +56,14 @@ func (p *Particle) Update() error {
 
 	p.Pos = p.Pos.Add(p.Velocity)
 
+	//
+	// TTL
+	//
+
+	if p.TTL > 0 {
+		p.TTL--
+	}
+
 	return nil
 }
 
@@ -72,7 +91,14 @@ func (p *Particle) Attract(cPos r3.Vector) error {
 	// TODO: disable bounce with config?
 
 	if distance < 20 {
-		force = force.Mul(-10)
+
+		if deleteOnBounce {
+			// It got to close! kill it
+			p.TTL = 0
+		} else {
+			force = force.Mul(-10)
+			// Too close: bounce it away
+		}
 	}
 
 	// Force = Mass * Acceleration
