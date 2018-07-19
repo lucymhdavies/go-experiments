@@ -17,8 +17,8 @@ type Particle struct {
 
 var (
 	// Infinite = -1
-	initialParticleTTL = 200
-	deleteOnBounce     = true
+	initialParticleTTL = -1    //200
+	deleteOnBounce     = false //true
 )
 
 func NewParticle(x, y, r, dx, dy, ddx, ddy float64) *Particle {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 type Config struct {
@@ -37,7 +36,9 @@ var (
 		ScreenScale:  1,
 	}
 
-	particles = []*Particle{}
+	particles    = []*Particle{}
+	targets      = []*Target{}
+	cursorTarget *Target
 )
 
 func init() {
@@ -45,6 +46,11 @@ func init() {
 
 	dot, _ = ebiten.NewImage(1, 1, ebiten.FilterNearest)
 	dot.Fill(color.White)
+
+	// Init cursorTarget
+	cX, cY := ebiten.CursorPosition()
+	cursorTarget = NewTarget(float64(cX), float64(cY))
+	targets = append(targets, cursorTarget)
 
 }
 
@@ -84,54 +90,26 @@ func update(screen *ebiten.Image) error {
 		_ = particle.Draw(screen)
 	}
 
-	x, y := ebiten.CursorPosition()
+	for _, target := range targets {
+		// If it's just died, skip it
+		if target == nil {
+			continue
+		}
+
+		// Still alive, so draw it
+		_ = target.Draw(screen)
+	}
 
 	if !inMenu {
 		debugText = fmt.Sprintf(
 			`FPS: %.2f
-X: %d, Y: %d
 Particles: %d / %d`,
 			ebiten.CurrentFPS(),
-			x, y,
 			len(particles), targetNumParticles,
 		)
 	}
 
 	ebitenutil.DebugPrint(screen, debugText)
-
-	return nil
-}
-
-var inMenu = false
-var debugText = ""
-
-func input() error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		inMenu = !inMenu
-	}
-
-	if inMenu {
-		return menuInput()
-	}
-
-	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
-		switch cfg.ScreenScale {
-		case 1:
-			cfg.ScreenScale = 2
-			cfg.ScreenWidth = 640
-			cfg.ScreenHeight = 480
-		case 2:
-			cfg.ScreenScale = 1
-			cfg.ScreenWidth = 1280
-			cfg.ScreenHeight = 960
-		default:
-			panic("not reached")
-		}
-	}
-	ebiten.SetScreenSize(cfg.ScreenWidth, cfg.ScreenHeight)
-	ebiten.SetScreenScale(cfg.ScreenScale)
-
-	// TODO: Increase/Decrease number of particles
 
 	return nil
 }

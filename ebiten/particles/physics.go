@@ -4,9 +4,6 @@ import (
 	"math"
 	"math/rand"
 	"time"
-
-	"github.com/golang/geo/r3"
-	"github.com/hajimehoshi/ebiten"
 )
 
 // TODO: stick these in config struct
@@ -16,9 +13,6 @@ var (
 )
 
 func physicsTicks() error {
-
-	// TODO: array of targets (mouse click = place target)
-	// Target = green circle
 
 	for {
 		// TODO: if number of particles > cfg.Particles.Count
@@ -50,10 +44,6 @@ func physicsTicks() error {
 			}
 		}
 
-		// Attract towards mouse cursor
-		cX, cY := ebiten.CursorPosition()
-		target := r3.Vector{X: float64(cX), Y: float64(cY)}
-
 		for i, particle := range particles {
 			// If we've recently deleted the particle...
 			if particle == nil {
@@ -70,15 +60,14 @@ func physicsTicks() error {
 				continue
 			}
 
-			_ = particle.Attract(target)
-
-			// Attract to all other particles
-			// TODO: if cfg.Particles.TargetOtherParticles == true
-			/*
-				for _, pTarget := range particles {
-					_ = particle.Attract(pTarget.Pos)
+			for _, target := range targets {
+				if target.Enabled {
+					target.Visible = true
+					_ = particle.Attract(target.Circle.Pos)
+				} else {
+					target.Visible = false
 				}
-			*/
+			}
 
 			_ = particle.Update()
 		}
