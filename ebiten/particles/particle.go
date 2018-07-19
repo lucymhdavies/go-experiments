@@ -17,17 +17,16 @@ type Particle struct {
 
 var (
 	// Infinite = -1
-	initialParticleTTL = -1    //200
+	initialParticleTTL = 2000
 	deleteOnBounce     = false //true
 )
 
-func NewParticle(x, y, r, dx, dy, ddx, ddy float64) *Particle {
+func NewParticle(x, y, r, dx, dy, ddx, ddy float64, ttl int) *Particle {
 	return &Particle{
 		Circle:       NewCircle(x, y, r),
 		Velocity:     r3.Vector{X: dx, Y: dy},
 		Acceleration: r3.Vector{X: ddx, Y: ddy},
-
-		TTL: initialParticleTTL,
+		TTL:          ttl,
 	}
 }
 
@@ -44,7 +43,7 @@ func (p *Particle) Update() error {
 	p.Velocity = p.Velocity.Add(p.Acceleration)
 	// Constrain speed
 	direction := p.Velocity.Normalize()
-	speed := constrain(p.Velocity.Distance(r3.Vector{0, 0, 0}), 0, 5)
+	speed := constrain(p.Velocity.Distance(r3.Vector{0, 0, 0}), 0, 10)
 	p.Velocity = direction.Mul(speed)
 
 	// Reset accelleration

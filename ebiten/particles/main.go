@@ -62,7 +62,7 @@ func main() {
 	ebiten.SetRunnableInBackground(true)
 
 	// Simulate the physics independently of game tick, to allow varying simulation speed
-	go physicsTicks()
+	//go physicsTicks()
 
 	if err := ebiten.Run(update, cfg.ScreenWidth, cfg.ScreenHeight, cfg.ScreenScale, "Particles!"); err != nil {
 		panic(err)
@@ -73,6 +73,9 @@ func update(screen *ebiten.Image) error {
 
 	// Handle input
 	_ = input()
+
+	// Physics
+	_ = physicsTicks()
 
 	if ebiten.IsDrawingSkipped() {
 		return nil
