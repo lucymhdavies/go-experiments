@@ -2,6 +2,8 @@ package selector
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/jroimartin/gocui"
@@ -97,11 +99,6 @@ func (selector selector) SelectFromSlice(list []string) (string, error) {
 	return selectedValue, err
 }
 func cursorDown(g *gocui.Gui, v *gocui.View) error {
-	logs, err := g.View("logs")
-	if err != nil {
-		// handle error
-	}
-	logs.Clear()
 
 	// TODO: check for end of screen?
 
@@ -111,17 +108,10 @@ func cursorDown(g *gocui.Gui, v *gocui.View) error {
 		selectedIndex = 0
 	}
 
-	fmt.Fprintf(logs, "DOWN: len:%d, index:%d", len(filenamesFiltered), selectedIndex)
-
 	return updateResults()
 }
 
 func cursorUp(g *gocui.Gui, v *gocui.View) error {
-	logs, err := g.View("logs")
-	if err != nil {
-		// handle error
-	}
-	logs.Clear()
 
 	// TODO: check for beginning of screen?
 
@@ -130,8 +120,6 @@ func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	} else {
 		selectedIndex = len(filenamesFiltered) - 1
 	}
-
-	fmt.Fprintf(logs, "UP: len:%d, index:%d", len(filenamesFiltered), selectedIndex)
 
 	return updateResults()
 }
@@ -147,6 +135,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprintf(v, `
 - Type digits, or press up/down to select from list, or
 - Type letters to filter list
+- CTRL-C to cancel
 `)
 		v.Editable = false
 		v.Wrap = true
@@ -259,11 +248,44 @@ func updateResults() error {
 		}
 		results.Clear()
 
+		logs, err := g.View("logs")
+		if err != nil {
+			// handle error
+		}
+		logs.Clear()
+
 		viewBufferText := strings.TrimSpace(finder.ViewBuffer())
+
+		// Regex returns sequential digits
+		re := regexp.MustCompile("[0-9]+")
+		// Typed numbers is an array of integers
+		typedNumbers := re.FindAllString(viewBufferText, -1)
+		// If there are any numbers, we only care about the latest one
+		// (kinda arbitrary, but we have to pick
+		lastTypedNumber := ""
+		if len(typedNumbers) > 0 {
+			lastTypedNumber = typedNumbers[len(typedNumbers)-1]
+			// TODO: handle the err
+			n, _ := strconv.Atoi(lastTypedNumber)
+
+			// If this is within the bounds of the filtered list, select it
+			if n < len(filenamesFiltered) {
+				selectedIndex = n
+			}
+		}
+
+		// Now, remove all numbers from the input
+
+		// Regex returns everything but digits
+		re = regexp.MustCompile("[^0-9]+")
+		typedText := strings.TrimSpace(strings.Join(re.FindAllString(viewBufferText, -1), ""))
+
+		fmt.Fprintf(logs, "finder:%s, text:%s, number:%s, lastNum:%s",
+			viewBufferText, typedText, typedNumbers, lastTypedNumber)
 
 		// TODO: scroll through of there are more than fit on screen
 
-		if viewBufferText == "" {
+		if typedText == "" {
 			// TODO: pre-append numbers
 			//fmt.Fprintf(results, "%s", filenamesBytes)
 
@@ -287,7 +309,7 @@ func updateResults() error {
 			}
 
 		} else {
-			matches := fuzzy.Find(viewBufferText, filenames)
+			matches := fuzzy.Find(typedText, filenames)
 
 			filenamesFiltered = []string{}
 
