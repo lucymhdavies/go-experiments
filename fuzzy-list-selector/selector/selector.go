@@ -20,15 +20,16 @@ var g *gocui.Gui
 // User can press up/down to pick from the list.
 // User can type to narrow down items from the list.
 
-var filenames []string
-var filenamesFiltered []string
-var filenamesBytes []byte
-var err error
-
 type selector struct {
 	Name string
-	// TODO: other config
-	// e.g. fuzzy matching off/on, up/down selection, numbers off/on, multi-select?
+	// TODO: other config, e.g.
+	// fuzzy matching off/on
+	// up/down selection
+	// mouse enabled
+	// numbers off/on
+	// multi-select? - probably want this as a different function, with different signature
+	// replace spaces with underscore - definitely shouldn't be the default
+	// should ctrl-c terminate the running app?
 	Items        []string
 	SelectedItem string
 }
@@ -40,11 +41,14 @@ func NewSelector(name string) *selector {
 }
 
 //
-// TODO: almost all the below is copypasta
+// TODO: almost all the below is copypasta, and is all crap that needs refactoring
 //
 
+var filenames []string
+var filenamesFiltered []string
+var filenamesBytes []byte
+var err error
 var selectedValue string
-
 var selectedIndex int
 
 // Select takes a slice of strings and displays an fzf inspired selector,
@@ -55,6 +59,9 @@ func (selector selector) SelectFromSlice(list []string) (string, error) {
 	filenames = selector.Items
 	filenamesFiltered = filenames
 	filenamesBytes = []byte(strings.Join(filenames, "\n"))
+	err = nil
+	selectedValue = ""
+	selectedIndex = -1
 
 	g, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -222,7 +229,8 @@ func finder(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		// Add typed character to view
 		v.EditWrite(ch)
 	case key == gocui.KeySpace:
-		v.EditWrite(' ')
+		// TODO: this should not be the default
+		v.EditWrite('_')
 	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
 		v.EditDelete(true)
 	case key == gocui.KeyDelete:
