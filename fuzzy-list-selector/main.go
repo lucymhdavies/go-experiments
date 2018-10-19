@@ -17,11 +17,8 @@ func main() {
 	}
 
 	inputDataSlice := strings.Split(strings.TrimSpace(string(inputDataBytes)), "\n")
-	for _, data := range inputDataSlice {
-		log.Infof(" - %s", data)
-	}
 
-	s := selector.NewSelector("AWS Accounts")
+	s := selector.NewSelector("data.txt")
 
 	selection, err := s.SelectFromSliceWithFilter(inputDataSlice, "")
 	if err != nil {
