@@ -50,10 +50,19 @@ var filenamesBytes []byte
 var err error
 var selectedValue string
 var selectedIndex int
+var initialFilter string
 
 // Select takes a slice of strings and displays an fzf inspired selector,
 // allowing the user to pick an item from the list
 func (selector selector) SelectFromSlice(list []string) (string, error) {
+	return selector.SelectFromSliceWithFilter(list, "")
+}
+
+// Select takes a slice of strings and displays an fzf inspired selector,
+// allowing the user to pick an item from the list
+//
+// This version allows you to pass in a predefined filter
+func (selector selector) SelectFromSliceWithFilter(list []string, filter string) (string, error) {
 	selector.Items = list
 	// TODO: temporary. in future, use selector.Items (and make all the below functions Selector methods)
 	filenames = selector.Items
@@ -62,6 +71,7 @@ func (selector selector) SelectFromSlice(list []string) (string, error) {
 	err = nil
 	selectedValue = ""
 	selectedIndex = -1
+	initialFilter = filter
 
 	g, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -84,6 +94,7 @@ func (selector selector) SelectFromSlice(list []string) (string, error) {
 	if err := g.SetKeybinding("", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
 		return "", err
 	}
+	// TODO: left/right/home/end
 
 	// TODO: pgup / pgdn
 	// FZF behaviour:
@@ -162,27 +173,16 @@ func layout(g *gocui.Gui) error {
 			return err
 		}
 		v.Editor = gocui.EditorFunc(finder)
+
+		// TODO: iterate through filter
+		for _, char := range initialFilter {
+			v.EditWrite(char)
+		}
+		updateResults()
 	}
 	if v, err := g.SetView("results", 0, 8, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
-		}
-
-		for m, item := range filenames {
-
-			selectChar := ""
-			highlightChar := ""
-			unHighlightChar := ""
-
-			if m == selectedIndex {
-				selectChar = ">"
-				highlightChar = "\033[7m"
-				unHighlightChar = "\033[0m"
-			}
-
-			fmt.Fprintf(v, fmt.Sprintf("%s%1s %3d - %s", highlightChar, selectChar, m, item))
-			fmt.Fprintln(v, unHighlightChar)
-
 		}
 
 		v.Editable = false
