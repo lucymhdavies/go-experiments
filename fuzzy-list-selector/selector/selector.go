@@ -104,6 +104,12 @@ func (selector selector) SelectFromSliceWithFilter(list []string, filter string)
 	if err := g.SetKeybinding("", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
 		return "", err
 	}
+	if err := g.SetKeybinding("", gocui.KeyPgup, gocui.ModNone, cursorPageUp); err != nil {
+		return "", err
+	}
+	if err := g.SetKeybinding("", gocui.KeyPgdn, gocui.ModNone, cursorPageDown); err != nil {
+		return "", err
+	}
 	if err := g.SetKeybinding("", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
 		return "", err
 	}
@@ -156,6 +162,48 @@ func cursorDown(g *gocui.Gui, v *gocui.View) error {
 
 	return updateResults()
 }
+func cursorPageDown(g *gocui.Gui, v *gocui.View) error {
+	results, err := g.View("results")
+	if err != nil {
+		// handle error
+	}
+	_, rsY := results.Size()
+
+	logs, err := g.View("logs")
+	if err != nil {
+		// handle error
+	}
+	logs.Clear()
+
+	if selectedIndex < len(filenamesFiltered)-1 {
+		scrollDistance := 10
+
+		// Check if adding that would put us past the last element
+		if selectedIndex+scrollDistance > len(filenamesFiltered)-1 {
+			scrollDistance = len(filenamesFiltered) - 1 - selectedIndex
+		}
+
+		selectedIndex += scrollDistance
+
+		// If we get to the bottom of the screen, scroll
+
+		// TODO: handle scroll down, then back up, then down again
+		// i.e. waht I want is "is my selected item at the bottom of the screen?"
+
+		if selectedIndex > rsY-1 {
+			scrollView(results, scrollDistance)
+		}
+
+		fmt.Fprintf(logs, "resultsSize:%d selected:%d scrollDistance:%d",
+			rsY, selectedIndex, scrollDistance)
+	} else {
+		// Select first element
+		selectedIndex = 0
+		// Reset scrolling
+		results.SetOrigin(0, 0)
+	}
+	return updateResults()
+}
 
 func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	results, err := g.View("results")
@@ -184,6 +232,51 @@ func cursorUp(g *gocui.Gui, v *gocui.View) error {
 
 	return updateResults()
 }
+func cursorPageUp(g *gocui.Gui, v *gocui.View) error {
+	results, err := g.View("results")
+	if err != nil {
+		// handle error
+	}
+	_, rsY := results.Size()
+	_, oy := results.Origin()
+
+	logs, err := g.View("logs")
+	if err != nil {
+		// handle error
+	}
+	logs.Clear()
+
+	if selectedIndex > 0 {
+		scrollDistance := 10
+		// Check if removing that would put us past the first element
+		if selectedIndex-scrollDistance < 0 {
+			// Select first element
+			selectedIndex = 0
+			// Reset scrolling
+			results.SetOrigin(0, 0)
+		} else {
+			selectedIndex -= scrollDistance
+
+			// If we're very nearly at the top...
+			if oy < scrollDistance {
+				// Reset scrolling
+				results.SetOrigin(0, 0)
+			} else {
+				scrollView(results, -scrollDistance)
+			}
+		}
+		fmt.Fprintf(logs, "resultsSize:%d selected:%d scrollDistance:%d oy:%d",
+			rsY, selectedIndex, scrollDistance, oy)
+	} else {
+		// select the last element
+		selectedIndex = len(filenamesFiltered) - 1
+
+		// Scroll to bottom
+		scrollView(results, len(filenamesFiltered)-rsY)
+	}
+
+	return updateResults()
+}
 
 func (selector selector) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
@@ -194,14 +287,14 @@ func (selector selector) Layout(g *gocui.Gui) error {
 		}
 		//
 		fmt.Fprintf(v, `
-- Type digits, or press up/down to select from list, or
+- Type digits, or press up/down/pgup/pgdn to select from list, or
 - Type letters to filter list
 - CTRL-C to cancel
 `)
 		v.Editable = false
 		v.Wrap = true
 		v.Frame = true
-		v.Title = "AWS Accounts"
+		v.Title = selector.Name
 	}
 
 	if v, err := g.SetView("finder", 0, 5, maxX-1, 7); err != nil {
@@ -264,9 +357,6 @@ func finder(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 
 	switch {
 	case ch != 0 && mod == 0:
-		// TODO: if digit typed, then highlight that number
-		// Should this happen only if we've not typed any other characters?
-
 		// Reset index to 0 when typing
 		selectedIndex = 0
 
@@ -279,6 +369,10 @@ func finder(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 
 		// Add typed character to view
 		v.EditWrite(ch)
+	case key == gocui.KeyArrowLeft:
+		v.MoveCursor(-1, 0, false)
+	case key == gocui.KeyArrowRight:
+		v.MoveCursor(1, 0, false)
 	case key == gocui.KeySpace:
 		// TODO: this should not be the default
 		v.EditWrite('_')
@@ -307,11 +401,11 @@ func updateResults() error {
 		}
 		results.Clear()
 
-		logs, err := g.View("logs")
-		if err != nil {
-			// handle error
-		}
-		logs.Clear()
+		// 		logs, err := g.View("logs")
+		// 		if err != nil {
+		// 			// handle error
+		// 		}
+		// 		logs.Clear()
 
 		viewBufferText := strings.TrimSpace(finder.ViewBuffer())
 
@@ -339,9 +433,9 @@ func updateResults() error {
 		re = regexp.MustCompile("[^0-9]+")
 		typedText := strings.TrimSpace(strings.Join(re.FindAllString(viewBufferText, -1), ""))
 
-		rsX, rsY := results.Size()
-		fmt.Fprintf(logs, "finder:%s, text:%s, number:%s, lastNum:%s, resultsSize:%d,%d",
-			viewBufferText, typedText, typedNumbers, lastTypedNumber, rsX, rsY)
+		//		rsX, rsY := results.Size()
+		// 		fmt.Fprintf(logs, "finder:%s, text:%s, number:%s, lastNum:%s, resultsSize:%d,%d",
+		// 			viewBufferText, typedText, typedNumbers, lastTypedNumber, rsX, rsY)
 
 		// TODO: scroll through of there are more than fit on screen
 
