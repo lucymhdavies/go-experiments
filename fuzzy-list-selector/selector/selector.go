@@ -270,6 +270,13 @@ func finder(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		// Reset index to 0 when typing
 		selectedIndex = 0
 
+		// Reset scrolling
+		results, err := g.View("results")
+		if err != nil {
+			// handle error
+		}
+		results.SetOrigin(0, 0)
+
 		// Add typed character to view
 		v.EditWrite(ch)
 	case key == gocui.KeySpace:
