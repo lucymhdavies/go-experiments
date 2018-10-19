@@ -30,6 +30,7 @@ type selector struct {
 	// multi-select? - probably want this as a different function, with different signature
 	// replace spaces with underscore - definitely shouldn't be the default
 	// should ctrl-c terminate the running app?
+	// show/hide help (keybinding, config) - bottom of screen?
 	Items        []string
 	SelectedItem string
 }
@@ -44,13 +45,25 @@ func NewSelector(name string) *selector {
 // TODO: almost all the below is copypasta, and is all crap that needs refactoring
 //
 
+// Filenames, because I copied from gocui/_example and I'm too lazy to change it
 var filenames []string
 var filenamesFiltered []string
 var filenamesBytes []byte
+
+// err....
 var err error
-var selectedValue string
+
+// Store which element is selected
 var selectedIndex int
+
+// and its value
+var selectedValue string
+
+// if we've passed in a filter, use it
 var initialFilter string
+
+// How big is the results pane?
+var resultsHeight int
 
 // Select takes a slice of strings and displays an fzf inspired selector,
 // allowing the user to pick an item from the list
@@ -82,7 +95,7 @@ func (selector selector) SelectFromSliceWithFilter(list []string, filter string)
 	g.Cursor = true
 	g.Mouse = false
 
-	g.SetManagerFunc(layout)
+	g.SetManagerFunc(selector.Layout)
 
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		return "", err
@@ -117,35 +130,65 @@ func (selector selector) SelectFromSliceWithFilter(list []string, filter string)
 	return selectedValue, err
 }
 func cursorDown(g *gocui.Gui, v *gocui.View) error {
-
-	// TODO: check for end of screen?
+	results, err := g.View("results")
+	if err != nil {
+		// handle error
+	}
+	_, rsY := results.Size()
 
 	if selectedIndex < len(filenamesFiltered)-1 {
 		selectedIndex++
+
+		// If we get to the bottom of the screen, scroll
+
+		// TODO: handle scroll down, then back up, then down again
+		// i.e. waht I want is "is my selected item at the bottom of the screen?"
+
+		if selectedIndex > rsY-1 {
+			scrollView(results, 1)
+		}
 	} else {
+		// Select first element
 		selectedIndex = 0
+		// Reset scrolling
+		results.SetOrigin(0, 0)
 	}
 
 	return updateResults()
 }
 
 func cursorUp(g *gocui.Gui, v *gocui.View) error {
-
-	// TODO: check for beginning of screen?
+	results, err := g.View("results")
+	if err != nil {
+		// handle error
+	}
+	_, rsY := results.Size()
 
 	if selectedIndex > 0 {
 		selectedIndex--
+
+		// If we get to the top of the screen, scroll
+		// TODO: figure out what to do here
+		// What we want is "is my selected item at the top of the screen?)
+		// For now, always scroll up
+		scrollView(results, -1)
 	} else {
+		// select the last element
 		selectedIndex = len(filenamesFiltered) - 1
+
+		// TODO: you are here
+		// Scroll to bottom
+
+		scrollView(results, len(filenamesFiltered)-rsY)
 	}
 
 	return updateResults()
 }
 
-func layout(g *gocui.Gui) error {
+func (selector selector) Layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 
-	if v, err := g.SetView("help", 0, 0, maxX, 4); err != nil {
+	if v, err := g.SetView("help", 0, 0, maxX-1, 4); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -161,7 +204,8 @@ func layout(g *gocui.Gui) error {
 		v.Title = "AWS Accounts"
 	}
 
-	if v, err := g.SetView("finder", 0, 5, maxX, 7); err != nil {
+	if v, err := g.SetView("finder", 0, 5, maxX-1, 7); err != nil {
+
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -178,7 +222,6 @@ func layout(g *gocui.Gui) error {
 		for _, char := range initialFilter {
 			v.EditWrite(char)
 		}
-		updateResults()
 	}
 	if v, err := g.SetView("results", 0, 8, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
@@ -191,7 +234,7 @@ func layout(g *gocui.Gui) error {
 		v.Title = "Search Results"
 	}
 
-	if v, err := g.SetView("logs", 0, maxY-10, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView("logs", maxX-50, maxY-10, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -199,9 +242,10 @@ func layout(g *gocui.Gui) error {
 		v.Editable = false
 		v.Wrap = true
 		v.Frame = true
-		v.Title = "Logs"
+		v.Title = "Debug"
 	}
 
+	updateResults()
 	return nil
 }
 
@@ -288,8 +332,9 @@ func updateResults() error {
 		re = regexp.MustCompile("[^0-9]+")
 		typedText := strings.TrimSpace(strings.Join(re.FindAllString(viewBufferText, -1), ""))
 
-		fmt.Fprintf(logs, "finder:%s, text:%s, number:%s, lastNum:%s",
-			viewBufferText, typedText, typedNumbers, lastTypedNumber)
+		rsX, rsY := results.Size()
+		fmt.Fprintf(logs, "finder:%s, text:%s, number:%s, lastNum:%s, resultsSize:%d,%d",
+			viewBufferText, typedText, typedNumbers, lastTypedNumber, rsX, rsY)
 
 		// TODO: scroll through of there are more than fit on screen
 
@@ -364,4 +409,15 @@ func contains(needle int, haystack []int) bool {
 		}
 	}
 	return false
+}
+
+func scrollView(v *gocui.View, dy int) error {
+	if v != nil {
+		v.Autoscroll = false
+		ox, oy := v.Origin()
+		if err := v.SetOrigin(ox, oy+dy); err != nil {
+			return err
+		}
+	}
+	return nil
 }
