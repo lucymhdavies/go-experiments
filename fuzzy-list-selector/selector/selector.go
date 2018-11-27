@@ -43,6 +43,7 @@ func NewSelector(name string) *selector {
 
 //
 // TODO: almost all the below is copypasta, and is all crap that needs refactoring
+// For example, all these global vars should be part of the Selector struct
 //
 
 // Filenames, because I copied from gocui/_example and I'm too lazy to change it
@@ -85,6 +86,11 @@ func (selector selector) SelectFromSliceWithFilter(list []string, filter string)
 	selectedValue = ""
 	selectedIndex = -1
 	initialFilter = filter
+
+	// If we have pre-populated a filter, select the first thing from the list
+	if initialFilter != "" {
+		selectedIndex = 0
+	}
 
 	g, err = gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -347,10 +353,16 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (selector selector) enter(g *gocui.Gui, v *gocui.View) error {
-	// TODO: set this to whichever item is highlighed
-	selectedValue = filenamesFiltered[selectedIndex]
 
-	return gocui.ErrQuit
+	// if we have something selected...
+	if selectedIndex != -1 {
+		// TODO: set this to whichever item is highlighed
+		selectedValue = filenamesFiltered[selectedIndex]
+
+		return gocui.ErrQuit
+	}
+
+	return nil // nothing selected = enter does nothing
 }
 
 func finder(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
