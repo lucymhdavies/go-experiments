@@ -1,4 +1,5 @@
 // Copyright 2018 The Ebiten Authors
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +12,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//
+// This has been modified by Lucy Davinhart, as a proof-of-concept
+// https://github.com/hajimehoshi/ebiten/blob/master/examples/spriteshd/main.go is the original file
+//
 
 // +build example jsgo
 
@@ -28,14 +34,13 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/lucymhdavies/go-experiments/ebiten/resources/images"
 )
 
 const (
-	screenWidth  = 1920
-	screenHeight = 1080
-	maxAngle     = 256
+	screenWidth  = 800
+	screenHeight = 600
 )
 
 var (
@@ -45,11 +50,11 @@ var (
 type Sprite struct {
 	imageWidth  int
 	imageHeight int
-	x           int
-	y           int
-	vx          int
-	vy          int
-	angle       int
+	x           float64
+	y           float64
+	vx          float64
+	vy          float64
+	angle       float64
 }
 
 func (s *Sprite) Update() {
@@ -58,19 +63,21 @@ func (s *Sprite) Update() {
 	if s.x < 0 {
 		s.x = -s.x
 		s.vx = -s.vx
-	} else if screenWidth <= s.x+s.imageWidth {
-		s.x = 2*(screenWidth-s.imageWidth) - s.x
+	} else if screenWidth <= s.x+float64(s.imageWidth) {
+		s.x = 2*(screenWidth-float64(s.imageWidth)) - s.x
 		s.vx = -s.vx
 	}
 	if s.y < 0 {
 		s.y = -s.y
 		s.vy = -s.vy
-	} else if screenHeight <= s.y+s.imageHeight {
-		s.y = 2*(screenHeight-s.imageHeight) - s.y
+	} else if screenHeight <= s.y+float64(s.imageHeight) {
+		s.y = 2*(screenHeight-float64(s.imageHeight)) - s.y
 		s.vy = -s.vy
 	}
-	s.angle++
-	s.angle %= maxAngle
+
+	if s.vx != 0 && s.vy != 0 {
+		s.angle = math.Atan2(float64(s.vy), float64(s.vx)) + math.Pi/2
+	}
 }
 
 type Sprites struct {
@@ -87,6 +94,7 @@ func (s *Sprites) Update() {
 const (
 	MinSprites = 0
 	MaxSprites = 50000
+	maxSpeed   = 5
 )
 
 var (
@@ -104,7 +112,7 @@ func init() {
 	//    This works even on browsers.
 	// 3) Use ebitenutil.NewImageFromFile to create an ebiten.Image directly from a file.
 	//    This also works on browsers.
-	img, _, err := image.Decode(bytes.NewReader(images.Ebiten_png))
+	img, _, err := image.Decode(bytes.NewReader(images.Bullet_png))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,9 +127,8 @@ func init() {
 
 	for i := range sprites.sprites {
 		w, h := ebitenImage.Size()
-		x, y := rand.Intn(screenWidth-w), rand.Intn(screenHeight-h)
-		vx, vy := 2*rand.Intn(2)-1, 2*rand.Intn(2)-1
-		a := rand.Intn(maxAngle)
+		x, y := rand.Float64()*float64(screenWidth-w), rand.Float64()*float64(screenHeight-h)
+		vx, vy := maxSpeed*2*rand.Float64()-maxSpeed, maxSpeed*2*rand.Float64()-maxSpeed
 		sprites.sprites[i] = &Sprite{
 			imageWidth:  w,
 			imageHeight: h,
@@ -129,7 +136,6 @@ func init() {
 			y:           y,
 			vx:          vx,
 			vy:          vy,
-			angle:       a,
 		}
 	}
 }
@@ -173,24 +179,28 @@ func update(screen *ebiten.Image) error {
 	for i := 0; i < sprites.num; i++ {
 		s := sprites.sprites[i]
 		op.GeoM.Reset()
+
+		// Rotate around midpoint:
+		// Translate to midpoint, rotate, translate back
 		op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-		op.GeoM.Rotate(2 * math.Pi * float64(s.angle) / maxAngle)
+		op.GeoM.Rotate(s.angle)
 		op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
 		op.GeoM.Translate(float64(s.x), float64(s.y))
 		screen.DrawImage(ebitenImage, op)
 	}
 	msg := fmt.Sprintf(`TPS: %0.2f
-FPS: %0.2f
-Num of sprites: %d
-Press <- or -> to change the number of sprites
-Press Q to quit`, ebiten.CurrentTPS(), ebiten.CurrentFPS(), sprites.num)
+	   FPS: %0.2f
+	   Num of sprites: %d
+	   Press <- or -> to change the number of sprites
+	   Press Q to quit`, ebiten.CurrentTPS(), ebiten.CurrentFPS(), sprites.num)
 	ebitenutil.DebugPrint(screen, msg)
 	return nil
 }
 
 func main() {
-	ebiten.SetFullscreen(true)
-	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "Sprites HD (Ebiten Demo)"); err != nil && err != regularTermination {
+	//ebiten.SetFullscreen(true)
+	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "Random Shenanigans"); err != nil && err != regularTermination {
 		log.Fatal(err)
 	}
 }
