@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"image"
 	_ "image/png"
-	"log"
+	"math"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/lucymhdavies/go-experiments/ebiten/resources/images"
@@ -38,15 +40,37 @@ func init() {
 	ebitenImage.DrawImage(origEbitenImage, op)
 }
 
-func (b Boid) Update() error {
-	b.ttl -= 1
+func (b *Boid) Update(f *Flock) error {
+	// Decrement its TTL
+	// (eventually, the boid will die)
+	/*
+		b.ttl -= 1
+		if b.ttl <= 0 {
+			return nil
+		}
+	*/
 
-	// TODO: move, update angle, etc. all that fun stuff.
+	// Move!
+	b.x += b.vx
+	b.y += b.vy
+
+	// TODO:
+	// do something when it gets offscreen
+	// either warp to the other side of the screen, or kill it
+
+	// Calculate angle
+	// add pi/2, to account for sprite direction
+	b.angle = math.Atan2(b.vy, b.vx) + math.Pi/2
+
+	// TODO later: actual boid logic
+	// Separation
+	// Alignment
+	// Cohesion
 
 	return nil
 }
 
-func (b Boid) Show(screen *ebiten.Image) error {
+func (b *Boid) Show(screen *ebiten.Image) error {
 
 	op.GeoM.Reset()
 

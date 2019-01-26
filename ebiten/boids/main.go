@@ -43,6 +43,9 @@ Press Q to quit`,
 	)
 	ebitenutil.DebugPrint(screen, msg)
 
+	// force slow TPS, for debugging
+	//time.Sleep(1 * time.Second)
+
 	return nil
 }
 

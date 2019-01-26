@@ -48,6 +48,7 @@ func init() {
 			y:           y,
 			vx:          vx,
 			vy:          vy,
+			ttl:         100,
 		}
 	}
 }
@@ -55,11 +56,12 @@ func init() {
 func (f Flock) Update() error {
 
 	for _, boid := range f.boids {
+
+		_ = boid.Update(&f)
+		// TODO: error handling
+
 		// TODO: if boid.ttl <= 0
 		// kill it
-
-		_ = boid.Update()
-		// TODO: error handling
 	}
 
 	// TODO: if flock is too small, add another boid
