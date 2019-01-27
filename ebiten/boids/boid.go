@@ -43,20 +43,30 @@ func init() {
 func (b *Boid) Update(f *Flock) error {
 	// Decrement its TTL
 	// (eventually, the boid will die)
-	/*
-		b.ttl -= 1
-		if b.ttl <= 0 {
-			return nil
-		}
-	*/
+	//b.ttl -= 1 // keep boids imortal for now
+	if b.ttl <= 0 {
+		return nil
+	}
 
 	// Move!
 	b.x += b.vx
 	b.y += b.vy
 
-	// TODO:
-	// do something when it gets offscreen
-	// either warp to the other side of the screen, or kill it
+	// TODO: in future, maybe consider killing the boids if they get off screen instead of warping?
+
+	// If we have left the world, warp to the other side
+	if b.x > WorldWidth {
+		b.x = 0
+	}
+	if b.x < 0 {
+		b.x = WorldWidth
+	}
+	if b.y > WorldHeight {
+		b.y = 0
+	}
+	if b.y < 0 {
+		b.y = WorldHeight
+	}
 
 	// Calculate angle
 	// add pi/2, to account for sprite direction
@@ -88,4 +98,8 @@ func (b *Boid) Show(screen *ebiten.Image) error {
 
 	return nil
 
+}
+
+func (b *Boid) IsDead() bool {
+	return b.ttl <= 0
 }

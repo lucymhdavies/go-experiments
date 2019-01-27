@@ -50,7 +50,7 @@ Press Q to quit`,
 }
 
 func main() {
-	if err := ebiten.Run(update, WorldWidth, WorldHeight, 1, "Hello world!"); err != nil && err != regularTermination {
+	if err := ebiten.Run(update, WorldWidth, WorldHeight, 1, "Boids!"); err != nil && err != regularTermination {
 		panic(err)
 	}
 }
