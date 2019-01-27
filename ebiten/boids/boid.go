@@ -5,6 +5,7 @@ import (
 	"image"
 	_ "image/png"
 	"math"
+	"math/rand"
 
 	log "github.com/sirupsen/logrus"
 
@@ -78,6 +79,33 @@ func (b *Boid) Update(f *Flock) error {
 	// Cohesion
 
 	return nil
+}
+
+func NewBoid() *Boid {
+
+	// size of image is important; we need it to get the center of the image
+	w, h := ebitenImage.Size()
+
+	// random position somewhere in the world
+	// between 0 and world height/width
+	x, y := rand.Float64()*float64(WorldWidth-w), rand.Float64()*float64(WorldHeight-h)
+
+	// random velocity, between -MaxSpeed and MaxSpeed
+	vx, vy := MaxSpeed*(rand.Float64()*2-1), MaxSpeed*(rand.Float64()*2-1)
+
+	// Set angle when creating it
+	angle := math.Atan2(vy, vx) + math.Pi/2
+
+	return &Boid{
+		imageWidth:  w,
+		imageHeight: h,
+		x:           x,
+		y:           y,
+		vx:          vx,
+		vy:          vy,
+		angle:       angle,
+		ttl:         100 + rand.Intn(100),
+	}
 }
 
 func (b *Boid) Show(screen *ebiten.Image) error {
