@@ -16,7 +16,6 @@ type Flock struct {
 
 var (
 	flock = &Flock{
-		// TODO; init this to 0, and add the boids in Update
 		boids:      make([]*Boid, 10, MaxBoids),
 		targetSize: 10,
 	}
@@ -24,11 +23,7 @@ var (
 	// we create them as part of Update
 )
 
-// TODO: move this to an AddBoid function later
-// the idea being, we start with an empty flock, and add one boid per tick
 func init() {
-	// make them exist pls
-
 	rand.Seed(time.Now().UnixNano())
 }
 

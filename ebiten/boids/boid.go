@@ -19,11 +19,11 @@ var (
 )
 
 type Boid struct {
-	imageWidth, imageHeight int
-	x, y                    float64
-	vx, vy                  float64
-	angle                   float64
-	ttl                     int
+	w, h   int
+	x, y   float64
+	vx, vy float64
+	angle  float64
+	ttl    int
 }
 
 func init() {
@@ -97,14 +97,14 @@ func NewBoid() *Boid {
 	angle := math.Atan2(vy, vx) + math.Pi/2
 
 	return &Boid{
-		imageWidth:  w,
-		imageHeight: h,
-		x:           x,
-		y:           y,
-		vx:          vx,
-		vy:          vy,
-		angle:       angle,
-		ttl:         100 + rand.Intn(100),
+		w:     w,
+		h:     h,
+		x:     x,
+		y:     y,
+		vx:    vx,
+		vy:    vy,
+		angle: angle,
+		ttl:   100 + rand.Intn(100),
 	}
 }
 
@@ -114,9 +114,9 @@ func (b *Boid) Show(screen *ebiten.Image) error {
 
 	// Rotate around midpoint:
 	// Translate to midpoint, rotate, translate back
-	op.GeoM.Translate(-float64(b.imageWidth)/2, -float64(b.imageHeight)/2)
+	op.GeoM.Translate(-float64(b.w)/2, -float64(b.h)/2)
 	op.GeoM.Rotate(b.angle)
-	op.GeoM.Translate(float64(b.imageWidth)/2, float64(b.imageHeight)/2)
+	op.GeoM.Translate(float64(b.w)/2, float64(b.h)/2)
 
 	// Move it to its position
 	op.GeoM.Translate(float64(b.x), float64(b.y))
