@@ -110,7 +110,7 @@ func (f *Flock) GetNeighbours(b *Boid) ([]*Boid, error) {
 	neighbours := []*Boid{}
 
 	// Get my position
-	x, y := b.GetPos()
+	position := b.GetPos()
 
 	// TODO: query the QuadTree which I've not implemented yet
 	for _, maybeNeighbour := range f.boids {
@@ -119,9 +119,9 @@ func (f *Flock) GetNeighbours(b *Boid) ([]*Boid, error) {
 		}
 
 		// Get it's distance from me
-		mNX, mNY := maybeNeighbour.GetPos()
-		dX := mNX - x
-		dY := mNY - y
+		mNPos := maybeNeighbour.GetPos()
+		dX := mNPos.X - position.X
+		dY := mNPos.Y - position.Y
 
 		// a^2 + b^2 = c^2
 		// simple pythagoras

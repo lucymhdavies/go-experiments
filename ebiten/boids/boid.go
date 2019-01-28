@@ -20,12 +20,14 @@ var (
 )
 
 type Boid struct {
-	w, h   int
-	x, y   float64
-	vx, vy float64
-	ax, ay float64
-	angle  float64
-	ttl    int
+	w, h         int
+	position     r2.Point
+	velocity     r2.Point
+	acceleration r2.Point
+	angle        float64
+
+	// Unused... for now
+	ttl int
 
 	// reference to flock that boid is a part of
 	flock *Flock
@@ -50,8 +52,8 @@ func init() {
 	ebitenImage.DrawImage(origEbitenImage, op)
 }
 
-func (b *Boid) GetPos() (float64, float64) {
-	return b.x, b.y
+func (b *Boid) GetPos() r2.Point {
+	return b.position
 }
 
 func (b *Boid) Update(f *Flock) error {
@@ -63,28 +65,27 @@ func (b *Boid) Update(f *Flock) error {
 	}
 
 	// Move!
-	b.x += b.vx
-	b.y += b.vy
+	b.position = b.position.Add(b.velocity)
 
 	// TODO: in future, maybe consider killing the boids if they get off screen instead of warping?
 
 	// If we have left the world, warp to the other side
-	if b.x > WorldWidth {
-		b.x = 0
+	if b.position.X > WorldWidth {
+		b.position.X = 0
 	}
-	if b.x < 0 {
-		b.x = WorldWidth
+	if b.position.X < 0 {
+		b.position.X = WorldWidth
 	}
-	if b.y > WorldHeight {
-		b.y = 0
+	if b.position.Y > WorldHeight {
+		b.position.Y = 0
 	}
-	if b.y < 0 {
-		b.y = WorldHeight
+	if b.position.Y < 0 {
+		b.position.Y = WorldHeight
 	}
 
 	// Calculate angle
 	// add pi/2, to account for sprite direction
-	b.angle = math.Atan2(b.vy, b.vx) + math.Pi/2
+	b.angle = math.Atan2(b.velocity.Y, b.velocity.X) + math.Pi/2
 
 	// Get my neighbours
 	neighbours, _ := flock.GetNeighbours(b)
@@ -96,39 +97,26 @@ func (b *Boid) Update(f *Flock) error {
 		}
 	}
 
-	// Before we do any boiding, reset accelleration
-	b.ax, b.ay = 0.0, 0.0
+	// Before we do any boiding, reset acceleration
+	b.acceleration = r2.Point{0.0, 0.0}
 
-	axAlignment, ayAlignment := b.Alignment(neighbours)
-	axSeparation, aySeparation := b.Separation(neighbours)
-	axCohesion, ayCohesion := b.Cohesion(neighbours)
+	alignment := b.Alignment(neighbours)
+	separation := b.Separation(neighbours)
+	cohesion := b.Cohesion(neighbours)
 	// TODO: multiply each of these by some individually
 	// configurable scale factor
 
-	b.ax += (axSeparation + axAlignment + axCohesion) / 3
-	b.ay += (aySeparation + ayAlignment + ayCohesion) / 3
+	b.acceleration = alignment.Add(separation.Add(cohesion))
+	b.acceleration = b.acceleration.Mul(1.0 / 3.0)
 
-	// TODO: no, seriously, just use r2.Point everywhere pls.
-	// you'll thank me later
+	// Limit acceleration (force) to our MaxForce
+	b.acceleration = ConstrainPoint(b.acceleration, MaxForce)
 
-	// Limit accelleration (force) to our MaxForce
-	a := r2.Point{b.ax, b.ay}
-	a = ConstrainPoint(a, MaxForce)
-	b.ax = a.X
-	b.ay = a.Y
-
-	// Apply our accelleration to our velocity
-	b.vx += b.ax
-	b.vy += b.ay
-
-	// TODO: no, seriously, just use r2.Point everywhere pls.
-	// you'll thank me later
+	// Apply our acceleration to our velocity
+	b.velocity = b.velocity.Add(b.acceleration)
 
 	// Constrain our velocity to MaxSpeed
-	v := r2.Point{b.vx, b.vy}
-	v = ConstrainPoint(v, MaxSpeed)
-	b.vx = v.X
-	b.vy = v.Y
+	b.velocity = ConstrainPoint(b.velocity, MaxSpeed)
 
 	return nil
 }
@@ -149,14 +137,12 @@ func NewBoid(f *Flock) *Boid {
 	angle := math.Atan2(vy, vx) + math.Pi/2
 
 	return &Boid{
-		w:     w,
-		h:     h,
-		x:     x,
-		y:     y,
-		vx:    vx,
-		vy:    vy,
-		angle: angle,
-		flock: f,
+		w:        w,
+		h:        h,
+		position: r2.Point{x, y},
+		velocity: r2.Point{vx, vy},
+		angle:    angle,
+		flock:    f,
 
 		// Not actually in use yet
 		ttl: 100 + rand.Intn(100),
@@ -175,7 +161,7 @@ func (b *Boid) Show(screen *ebiten.Image) error {
 	op.GeoM.Translate(float64(b.w)/2, float64(b.h)/2)
 
 	// Move it to its position
-	op.GeoM.Translate(float64(b.x), float64(b.y))
+	op.GeoM.Translate(b.position.X, b.position.Y)
 
 	if HighlightPrimary {
 		// If we're highlighting it...
@@ -200,45 +186,31 @@ func (b *Boid) IsDead() bool {
 
 // Alignment:
 // steer towards the average heading of local flockmates
-func (b *Boid) Alignment(neighbours []*Boid) (float64, float64) {
-
-	//forceX, forceY := 0.0, 0.0
-	// 	averageAngle := 0.0
-	//
-	// 	for _, neighbour := range neighbours {
-	// 		averageAngle += neighbour.angle
-	// 	}
-	// 	averageAngle = averageAngle / float64(len(neighbours))
-	//
-	// 	magnitude = 1
-	//
-	// 	forceX = magnitude * math.Cos(averageAngle)
-	// 	forceY = magnitude * math.Sin(averageAngle)
+func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 
 	force := r2.Point{0.0, 0.0}
 
 	// Add up all their velocities, normalize, then multiply by MaxForce
 	for _, neighbour := range neighbours {
-		force.X += neighbour.vx
-		force.Y += neighbour.vy
+		force = force.Add(neighbour.velocity)
 	}
 	force = ConstrainPoint(force, MaxForce)
 
-	return force.X, force.Y
+	return force
 }
 
 // Separation:
 // steer to avoid crowding local flockmates
-func (b *Boid) Separation(neighbours []*Boid) (float64, float64) {
+func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 
-	return 0.0, 0.0
+	return r2.Point{0.0, 0.0}
 }
 
 // Cohesion:
 // steer to move toward the average position of local flockmates
-func (b *Boid) Cohesion(neighbours []*Boid) (float64, float64) {
+func (b *Boid) Cohesion(neighbours []*Boid) r2.Point {
 
-	return 0.0, 0.0
+	return r2.Point{0.0, 0.0}
 }
 
 func ConstrainPoint(p r2.Point, max float64) r2.Point {
