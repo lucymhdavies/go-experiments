@@ -24,6 +24,13 @@ type Boid struct {
 	vx, vy float64
 	angle  float64
 	ttl    int
+
+	// reference to flock that boid is a part of
+	flock *Flock
+
+	// For debugging, highlight boid 1, and its neighbours
+	IsHighlighted bool
+	IsNeighbour   bool
 }
 
 func init() {
@@ -39,6 +46,10 @@ func init() {
 	op := &ebiten.DrawImageOptions{}
 	op.ColorM.Scale(1, 1, 1, 0.5)
 	ebitenImage.DrawImage(origEbitenImage, op)
+}
+
+func (b *Boid) GetPos() (float64, float64) {
+	return b.x, b.y
 }
 
 func (b *Boid) Update(f *Flock) error {
@@ -73,6 +84,16 @@ func (b *Boid) Update(f *Flock) error {
 	// add pi/2, to account for sprite direction
 	b.angle = math.Atan2(b.vy, b.vx) + math.Pi/2
 
+	// Get my neighbours
+	neighbours, _ := flock.GetNeighbours(b)
+
+	// For debugging, highlight neighbours of primary boid
+	if b.IsHighlighted {
+		for _, boid := range neighbours {
+			boid.IsNeighbour = true
+		}
+	}
+
 	// TODO later: actual boid logic
 	// Separation
 	// Alignment
@@ -81,7 +102,7 @@ func (b *Boid) Update(f *Flock) error {
 	return nil
 }
 
-func NewBoid() *Boid {
+func NewBoid(f *Flock) *Boid {
 
 	// size of image is important; we need it to get the center of the image
 	w, h := ebitenImage.Size()
@@ -104,13 +125,17 @@ func NewBoid() *Boid {
 		vx:    vx,
 		vy:    vy,
 		angle: angle,
-		ttl:   100 + rand.Intn(100),
+		flock: f,
+
+		// Not actually in use yet
+		ttl: 100 + rand.Intn(100),
 	}
 }
 
 func (b *Boid) Show(screen *ebiten.Image) error {
 
 	op.GeoM.Reset()
+	op.ColorM.Reset()
 
 	// Rotate around midpoint:
 	// Translate to midpoint, rotate, translate back
@@ -120,6 +145,16 @@ func (b *Boid) Show(screen *ebiten.Image) error {
 
 	// Move it to its position
 	op.GeoM.Translate(float64(b.x), float64(b.y))
+
+	if HighlightPrimary {
+		// If we're highlighting it...
+		if b.IsHighlighted {
+			op.ColorM.Scale(1, 0, 0, 1)
+		}
+		if b.IsNeighbour {
+			op.ColorM.Scale(0, 1, 0, 1)
+		}
+	}
 
 	// Draw the damn boid!
 	screen.DrawImage(ebitenImage, op)

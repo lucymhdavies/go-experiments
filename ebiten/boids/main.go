@@ -17,13 +17,24 @@ const (
 	WorldWidth  = 800
 	WorldHeight = 600
 
-	MinBoids = 0
-	MaxBoids = 1000
-	MaxSpeed = 5
+	MinBoids     = 1
+	MaxBoids     = 1000
+	InitialBoids = 10
+	MaxSpeed     = 5
+
+	// How close do other boids need to be to be considered a neighbour
+	NeighbourhoodDistance = 50.0
+
+	//
+	// Debug Options
+	//
+	logLevel = log.DebugLevel
 
 	// Whether or not to run at 1 TPS, for debugging
-	OneTPS   = false
-	logLevel = log.DebugLevel
+	OneTPS = false
+
+	// Highlight or not
+	HighlightPrimary = true
 )
 
 var regularTermination = errors.New("regular termination")
