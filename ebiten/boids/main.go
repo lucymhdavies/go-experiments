@@ -21,6 +21,7 @@ const (
 	MaxBoids     = 1000
 	InitialBoids = 10
 	MaxSpeed     = 5
+	MaxForce     = 1
 
 	// How close do other boids need to be to be considered a neighbour
 	NeighbourhoodDistance = 50.0
