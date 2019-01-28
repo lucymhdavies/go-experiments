@@ -25,6 +25,7 @@ const (
 
 	// How close do other boids need to be to be considered a neighbour
 	NeighbourhoodDistance = 50.0
+	SeparationDistance    = 10.0
 
 	//
 	// Debug Options

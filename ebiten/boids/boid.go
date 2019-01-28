@@ -101,10 +101,13 @@ func (b *Boid) Update(f *Flock) error {
 	b.acceleration = r2.Point{0.0, 0.0}
 
 	alignment := b.Alignment(neighbours)
+	alignment = alignment.Mul(1)
+
 	separation := b.Separation(neighbours)
+	separation = separation.Mul(1)
+
 	cohesion := b.Cohesion(neighbours)
-	// TODO: multiply each of these by some individually
-	// configurable scale factor
+	cohesion = cohesion.Mul(1)
 
 	b.acceleration = alignment.Add(separation.Add(cohesion))
 	b.acceleration = b.acceleration.Mul(1.0 / 3.0)
@@ -194,6 +197,7 @@ func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 	for _, neighbour := range neighbours {
 		force = force.Add(neighbour.velocity)
 	}
+	force = force.Sub(b.velocity)
 	force = ConstrainPoint(force, MaxForce)
 
 	return force
@@ -203,14 +207,47 @@ func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 // steer to avoid crowding local flockmates
 func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 
-	return r2.Point{0.0, 0.0}
+	force := r2.Point{0.0, 0.0}
+
+	for _, neighbour := range neighbours {
+		// vector from neighbour to us
+		distanceVector := b.position.Sub(neighbour.position)
+		distance := distanceVector.Norm()
+
+		// how many neighbours are too close
+		count := 0
+
+		// if we are too close...
+		if distance < SeparationDistance {
+			// unit vector pointing away from neighbour
+			distanceVector = distanceVector.Normalize()
+
+			// Weight inversely to distance
+			distanceVector = distanceVector.Mul(1.0 / distance)
+
+			force.Add(distanceVector)
+
+			count++
+		}
+
+		if count > 0 {
+			force.Mul(1.0 / float64(count))
+		}
+	}
+
+	force = force.Sub(b.velocity)
+	force = ConstrainPoint(force, MaxForce)
+
+	return force
 }
 
 // Cohesion:
 // steer to move toward the average position of local flockmates
 func (b *Boid) Cohesion(neighbours []*Boid) r2.Point {
 
-	return r2.Point{0.0, 0.0}
+	force := r2.Point{0.0, 0.0}
+
+	return force
 }
 
 func ConstrainPoint(p r2.Point, max float64) r2.Point {
