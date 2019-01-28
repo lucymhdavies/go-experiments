@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"math/rand"
 	"time"
 
@@ -120,12 +119,8 @@ func (f *Flock) GetNeighbours(b *Boid) ([]*Boid, error) {
 
 		// Get it's distance from me
 		mNPos := maybeNeighbour.GetPos()
-		dX := mNPos.X - position.X
-		dY := mNPos.Y - position.Y
-
-		// a^2 + b^2 = c^2
-		// simple pythagoras
-		distance := math.Sqrt(math.Pow(dY, 2) + math.Pow(dX, 2))
+		distanceVector := mNPos.Sub(position)
+		distance := distanceVector.Norm()
 
 		// if position within NeighbourhoodDisance...
 		if distance <= NeighbourhoodDistance {

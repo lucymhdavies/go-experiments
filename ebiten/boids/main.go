@@ -17,9 +17,9 @@ const (
 	WorldWidth  = 800
 	WorldHeight = 600
 
-	MinBoids     = 1
+	MinBoids     = 10
 	MaxBoids     = 1000
-	InitialBoids = 10
+	InitialBoids = 100
 	MaxSpeed     = 5
 	MaxForce     = 1
 

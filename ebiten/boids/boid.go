@@ -216,7 +216,7 @@ func (b *Boid) Cohesion(neighbours []*Boid) r2.Point {
 func ConstrainPoint(p r2.Point, max float64) r2.Point {
 
 	// Get our current magnitude
-	magnitude := math.Sqrt(math.Pow(p.X, 2) + math.Pow(p.Y, 2))
+	magnitude := p.Norm()
 
 	// If we're too fast, slow down
 	if magnitude > max {
