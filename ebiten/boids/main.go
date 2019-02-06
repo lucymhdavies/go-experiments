@@ -19,9 +19,17 @@ const (
 
 	MinBoids     = 10
 	MaxBoids     = 1000
-	InitialBoids = 100
+	InitialBoids = 1000
 	MaxSpeed     = 5
 	MaxForce     = 1
+
+	// How many boids we can update concurrently
+	workerPools = 50
+
+	// Weighting for each boid behaviour
+	AlignmentMultiplier  = 1
+	SeparationMultiplier = 0.9
+	CohesionMultiplier   = 1
 
 	// How close do other boids need to be to be considered a neighbour
 	NeighbourhoodDistance = 50.0

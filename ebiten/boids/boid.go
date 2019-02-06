@@ -101,13 +101,13 @@ func (b *Boid) Update(f *Flock) error {
 	b.acceleration = r2.Point{0.0, 0.0}
 
 	alignment := b.Alignment(neighbours)
-	alignment = alignment.Mul(1)
+	alignment = alignment.Mul(AlignmentMultiplier)
 
 	separation := b.Separation(neighbours)
-	separation = separation.Mul(1)
+	separation = separation.Mul(SeparationMultiplier)
 
 	cohesion := b.Cohesion(neighbours)
-	cohesion = cohesion.Mul(1)
+	cohesion = cohesion.Mul(CohesionMultiplier)
 
 	b.acceleration = alignment.Add(separation.Add(cohesion))
 	b.acceleration = b.acceleration.Mul(1.0 / 3.0)
