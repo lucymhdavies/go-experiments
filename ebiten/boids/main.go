@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -18,13 +19,10 @@ const (
 	WorldHeight = 600
 
 	MinBoids     = 10
-	MaxBoids     = 1000
-	InitialBoids = 1000
+	MaxBoids     = 5000
+	InitialBoids = 2000
 	MaxSpeed     = 5
 	MaxForce     = 1
-
-	// How many boids we can update concurrently
-	workerPools = 50
 
 	// Weighting for each boid behaviour
 	AlignmentMultiplier  = 1
@@ -47,6 +45,11 @@ const (
 	HighlightPrimary = true
 )
 
+var (
+	// How many boids we can update concurrently
+	workerPools = runtime.NumCPU()
+)
+
 var regularTermination = errors.New("regular termination")
 
 func update(screen *ebiten.Image) error {
@@ -60,9 +63,15 @@ func update(screen *ebiten.Image) error {
 		return regularTermination
 	}
 
+	// Increase/Decrease faster when shift is held
+	incrementAmount := 1
+	if ebiten.IsKeyPressed(ebiten.KeyShift) {
+		incrementAmount = 10
+	}
+
 	// Decrease the nubmer of the sprites.
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		flock.targetSize -= 1
+		flock.targetSize -= incrementAmount
 		if flock.targetSize < MinBoids {
 			flock.targetSize = MinBoids
 		}
@@ -70,7 +79,7 @@ func update(screen *ebiten.Image) error {
 
 	// Increase the nubmer of the sprites.
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		flock.targetSize += 1
+		flock.targetSize += incrementAmount
 		if MaxBoids < flock.targetSize {
 			flock.targetSize = MaxBoids
 		}
