@@ -20,13 +20,13 @@ const (
 
 	MinBoids     = 10
 	MaxBoids     = 5000
-	InitialBoids = 2000
+	InitialBoids = 1000
 	MaxSpeed     = 5
 	MaxForce     = 1
 
 	// Weighting for each boid behaviour
-	AlignmentMultiplier  = 1
-	SeparationMultiplier = 0.9
+	AlignmentMultiplier  = 1.5
+	SeparationMultiplier = 1
 	CohesionMultiplier   = 1
 
 	// How close do other boids need to be to be considered a neighbour
