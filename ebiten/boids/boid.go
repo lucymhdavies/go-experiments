@@ -64,6 +64,15 @@ func (b *Boid) Update(f *Flock) error {
 		return nil
 	}
 
+	b.Flock()
+
+	// Apply our acceleration to our velocity
+	b.velocity = b.velocity.Add(b.acceleration)
+	b.acceleration = r2.Point{0.0, 0.0}
+
+	// Constrain our velocity to MaxSpeed
+	b.velocity = ConstrainPoint(b.velocity, MaxSpeed)
+
 	// Move!
 	b.position = b.position.Add(b.velocity)
 
@@ -86,40 +95,6 @@ func (b *Boid) Update(f *Flock) error {
 	// Calculate angle
 	// add pi/2, to account for sprite direction
 	b.angle = math.Atan2(b.velocity.Y, b.velocity.X) + math.Pi/2
-
-	// Get my neighbours
-	neighbours, _ := flock.GetNeighbours(b)
-
-	// For debugging, highlight neighbours of primary boid
-	if b.IsHighlighted {
-		for _, boid := range neighbours {
-			boid.IsNeighbour = true
-		}
-	}
-
-	// Before we do any boiding, reset acceleration
-	b.acceleration = r2.Point{0.0, 0.0}
-
-	alignment := b.Alignment(neighbours)
-	alignment = alignment.Mul(AlignmentMultiplier)
-
-	separation := b.Separation(neighbours)
-	separation = separation.Mul(SeparationMultiplier)
-
-	cohesion := b.Cohesion(neighbours)
-	cohesion = cohesion.Mul(CohesionMultiplier)
-
-	b.acceleration = alignment.Add(separation.Add(cohesion))
-	b.acceleration = b.acceleration.Mul(1.0 / 3.0)
-
-	// Limit acceleration (force) to our MaxForce
-	b.acceleration = ConstrainPoint(b.acceleration, MaxForce)
-
-	// Apply our acceleration to our velocity
-	b.velocity = b.velocity.Add(b.acceleration)
-
-	// Constrain our velocity to MaxSpeed
-	b.velocity = ConstrainPoint(b.velocity, MaxSpeed)
 
 	return nil
 }
@@ -187,19 +162,54 @@ func (b *Boid) IsDead() bool {
 	return b.ttl <= 0
 }
 
+// Flocking behaviours to update accelleration
+func (b *Boid) Flock() {
+
+	// Get my neighbours
+	neighbours, _ := flock.GetNeighbours(b)
+
+	// For debugging, highlight neighbours of primary boid
+	if b.IsHighlighted {
+		for _, boid := range neighbours {
+			boid.IsNeighbour = true
+		}
+	}
+
+	alignment := b.Alignment(neighbours)
+	alignment = alignment.Mul(AlignmentMultiplier)
+
+	separation := b.Separation(neighbours)
+	separation = separation.Mul(SeparationMultiplier)
+
+	cohesion := b.Cohesion(neighbours)
+	cohesion = cohesion.Mul(CohesionMultiplier)
+
+	b.acceleration = b.acceleration.Add(alignment)
+	b.acceleration = b.acceleration.Add(separation)
+	b.acceleration = b.acceleration.Add(cohesion)
+}
+
 // Alignment:
 // steer towards the average heading of local flockmates
 func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 
 	force := r2.Point{0.0, 0.0}
+	if len(neighbours) == 0 {
+		return force
+	}
 
 	// Add up all their velocities, normalize, then multiply by MaxForce
 	for _, neighbour := range neighbours {
 		force = force.Add(neighbour.velocity)
 	}
+
+	force = force.Mul(1.0 / float64(len(neighbours)))
+
+	force = force.Normalize()
+	force = force.Mul(MaxSpeed)
+
 	force = force.Sub(b.velocity)
 	force = ConstrainPoint(force, MaxForce)
-
 	return force
 }
 
@@ -208,17 +218,21 @@ func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 
 	force := r2.Point{0.0, 0.0}
+	if len(neighbours) == 0 {
+		return force
+	}
+
+	// how many neighbours are too close
+	count := 0
 
 	for _, neighbour := range neighbours {
 		// vector from neighbour to us
 		distanceVector := b.position.Sub(neighbour.position)
-		distance := distanceVector.Norm()
-
-		// how many neighbours are too close
-		count := 0
 
 		// if we are too close...
-		if distance < SeparationDistance {
+		distance := distanceVector.Norm()
+		if distance > 0 && distance < SeparationDistance {
+
 			// unit vector pointing away from neighbour
 			distanceVector = distanceVector.Normalize()
 
@@ -230,10 +244,17 @@ func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 			count++
 		}
 
-		if count > 0 {
-			force.Mul(1.0 / float64(count))
-		}
 	}
+	if count > 0 {
+		// Get the average
+		force.Mul(1.0 / float64(count))
+	} else {
+		// No neighbours were too close, so skip the rest of the math
+		return force
+	}
+
+	force = force.Normalize()
+	force = force.Mul(MaxSpeed)
 
 	force = force.Sub(b.velocity)
 	force = ConstrainPoint(force, MaxForce)
@@ -246,6 +267,43 @@ func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 func (b *Boid) Cohesion(neighbours []*Boid) r2.Point {
 
 	force := r2.Point{0.0, 0.0}
+	if len(neighbours) == 0 {
+		return force
+	}
+
+	averagePos := r2.Point{0.0, 0.0}
+	count := 0.0
+
+	// Get average position of neighbours
+	for _, neighbour := range neighbours {
+		// vector from neighbour to us
+		distanceVector := b.position.Sub(neighbour.position)
+
+		distance := distanceVector.Norm()
+
+		if distance > 0 && distance < NeighbourhoodDistance {
+			averagePos = averagePos.Add(neighbour.position)
+			count++
+		}
+	}
+
+	if count == 0 {
+		return force
+	}
+
+	averagePos = averagePos.Mul(1.0 / count)
+
+	// Get a vector from myself to the average position of my neighbours.
+	// This is my desired speed, to get to that position in 1 tick
+	desiredVelocity := averagePos.Sub(b.position)
+
+	// Scale up/down to our maximum speed
+	desiredVelocity = desiredVelocity.Normalize()
+	desiredVelocity = desiredVelocity.Mul(MaxSpeed)
+
+	// Now we need a force that bumps our velocity up to the desired speed
+	force = desiredVelocity.Sub(b.velocity)
+	force = ConstrainPoint(force, MaxForce)
 
 	return force
 }
