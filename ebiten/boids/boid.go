@@ -239,7 +239,7 @@ func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 			// Weight inversely to distance
 			distanceVector = distanceVector.Mul(1.0 / distance)
 
-			force.Add(distanceVector)
+			force = force.Add(distanceVector)
 
 			count++
 		}
