@@ -57,11 +57,13 @@ func (b *Boid) GetPos() r2.Point {
 }
 
 func (b *Boid) Update(f *Flock) error {
-	// Decrement its TTL
-	// (eventually, the boid will die)
-	//b.ttl -= 1 // keep boids imortal for now
-	if b.ttl <= 0 {
-		return nil
+	if BoidsHaveTTL {
+		// Decrement its TTL
+		// (eventually, the boid will die)
+		b.ttl -= 1 // keep boids imortal for now
+		if b.ttl <= 0 {
+			return nil
+		}
 	}
 
 	b.Flock()
@@ -114,6 +116,11 @@ func NewBoid(f *Flock) *Boid {
 	// Set angle when creating it
 	angle := math.Atan2(vy, vx) + math.Pi/2
 
+	var ttl int
+	if BoidsHaveTTL {
+		ttl = MinInitialTTL + rand.Intn(MaxInitialTTL-MinInitialTTL)
+	}
+
 	return &Boid{
 		w:        w,
 		h:        h,
@@ -121,9 +128,7 @@ func NewBoid(f *Flock) *Boid {
 		velocity: r2.Point{vx, vy},
 		angle:    angle,
 		flock:    f,
-
-		// Not actually in use yet
-		ttl: 100 + rand.Intn(100),
+		ttl:      ttl,
 	}
 }
 
@@ -159,7 +164,11 @@ func (b *Boid) Show(screen *ebiten.Image) error {
 }
 
 func (b *Boid) IsDead() bool {
-	return b.ttl <= 0
+	if BoidsHaveTTL {
+		return b.ttl <= 0
+	}
+
+	return false
 }
 
 // Flocking behaviours to update accelleration

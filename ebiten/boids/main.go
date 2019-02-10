@@ -33,6 +33,11 @@ const (
 	NeighbourhoodDistance = 50.0
 	SeparationDistance    = 25.0
 
+	// TTL
+	BoidsHaveTTL  = true
+	MaxInitialTTL = 1000
+	MinInitialTTL = 100
+
 	//
 	// Debug Options
 	//

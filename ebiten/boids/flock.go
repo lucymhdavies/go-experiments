@@ -73,6 +73,7 @@ func (f *Flock) Update() error {
 				// TODO: killing boids should instead be a case of removing them
 				// from the slice, in addition to setting them to nil
 				f.boids[i] = nil
+				results <- true
 			} else {
 				log.Tracef("Putting boid %v onto jobs channel", i)
 				jobs <- boid
@@ -141,6 +142,13 @@ func (f *Flock) GetNeighbours(b *Boid) ([]*Boid, error) {
 
 	// TODO: query the QuadTree which I've not implemented yet
 	for _, maybeNeighbour := range f.boids {
+
+		// If it just died, skip
+		if maybeNeighbour == nil {
+			continue
+		}
+
+		// If it's me, skip
 		if b == maybeNeighbour {
 			continue
 		}
