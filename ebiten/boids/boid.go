@@ -79,17 +79,17 @@ func (b *Boid) Update(f *Flock) error {
 	// TODO: in future, maybe consider killing the boids if they get off screen instead of warping?
 
 	// If we have left the world, warp to the other side
-	if b.position.X > WorldWidth {
-		b.position.X = 0
+	if b.position.X > WorldWidth+float64(b.w)/2 {
+		b.position.X = -float64(b.w) / 2
 	}
-	if b.position.X < 0 {
-		b.position.X = WorldWidth
+	if b.position.X < -float64(b.w)/2 {
+		b.position.X = WorldWidth + float64(b.w)/2
 	}
-	if b.position.Y > WorldHeight {
-		b.position.Y = 0
+	if b.position.Y > WorldHeight+float64(b.h)/2 {
+		b.position.Y = -float64(b.h) / 2
 	}
-	if b.position.Y < 0 {
-		b.position.Y = WorldHeight
+	if b.position.Y < -float64(b.h)/2 {
+		b.position.Y = WorldHeight + float64(b.h)/2
 	}
 
 	// Calculate angle
