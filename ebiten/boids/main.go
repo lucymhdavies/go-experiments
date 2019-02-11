@@ -18,9 +18,16 @@ const (
 	WorldWidth  = 800
 	WorldHeight = 600
 
+	// Fullscreen dimensions. TODO: get this from os
+	//WorldWidth  = 1280
+	//WorldHeight = 720
+	Fullscreen = false
+
+	ShowDebug = false
+
 	MinBoids     = 10
 	MaxBoids     = 5000
-	InitialBoids = 150
+	InitialBoids = 1000
 	MaxSpeed     = 2
 	MaxForce     = 0.03
 
@@ -34,7 +41,7 @@ const (
 	SeparationDistance    = 25.0
 
 	// TTL
-	BoidsHaveTTL  = true
+	BoidsHaveTTL  = false
 	MaxInitialTTL = 1000
 	MinInitialTTL = 100
 
@@ -47,7 +54,7 @@ const (
 	OneTPS = false
 
 	// Highlight or not
-	HighlightPrimary = true
+	HighlightPrimary = false
 )
 
 var (
@@ -106,16 +113,18 @@ func update(screen *ebiten.Image) error {
 
 	flock.Show(screen)
 
-	msg := fmt.Sprintf(`TPS: %0.2f
+	if ShowDebug {
+		msg := fmt.Sprintf(`TPS: %0.2f
 FPS: %0.2f
 Num of boids: %d
 Press <- or -> to change the number of sprites
 Press Q to quit`,
-		ebiten.CurrentTPS(),
-		ebiten.CurrentFPS(),
-		flock.Size(),
-	)
-	ebitenutil.DebugPrint(screen, msg)
+			ebiten.CurrentTPS(),
+			ebiten.CurrentFPS(),
+			flock.Size(),
+		)
+		ebitenutil.DebugPrint(screen, msg)
+	}
 
 	if OneTPS {
 		// force slow TPS, for debugging
@@ -130,6 +139,12 @@ Press Q to quit`,
 func main() {
 	log.SetLevel(logLevel)
 	ebiten.SetRunnableInBackground(true)
+
+	if Fullscreen {
+		ebiten.SetFullscreen(true)
+		ebiten.SetCursorVisible(false)
+	}
+
 	if err := ebiten.Run(update, WorldWidth, WorldHeight, 1, "Boids!"); err != nil && err != regularTermination {
 		panic(err)
 	}
