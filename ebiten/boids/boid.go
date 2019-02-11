@@ -177,6 +177,9 @@ func (b *Boid) Flock() {
 	// Get my neighbours
 	neighbours, _ := flock.GetNeighbours(b)
 
+	// Get nearby obstacles
+	obs, _ := obstacles.GetNearbyObstacles(b, ObstacleDistance)
+
 	// For debugging, highlight neighbours of primary boid
 	if b.IsHighlighted {
 		for _, boid := range neighbours {
@@ -190,11 +193,15 @@ func (b *Boid) Flock() {
 	separation := b.Separation(neighbours)
 	separation = separation.Mul(SeparationMultiplier)
 
+	avoidObstacles := b.AvoidObstacles(obs)
+	avoidObstacles = avoidObstacles.Mul(AvoidObstaclesMultiplier)
+
 	cohesion := b.Cohesion(neighbours)
 	cohesion = cohesion.Mul(CohesionMultiplier)
 
 	b.acceleration = b.acceleration.Add(alignment)
 	b.acceleration = b.acceleration.Add(separation)
+	b.acceleration = b.acceleration.Add(avoidObstacles)
 	b.acceleration = b.acceleration.Add(cohesion)
 }
 
@@ -222,25 +229,24 @@ func (b *Boid) Alignment(neighbours []*Boid) r2.Point {
 	return force
 }
 
-// Separation:
-// steer to avoid crowding local flockmates
-func (b *Boid) Separation(neighbours []*Boid) r2.Point {
-
+// avoidPoints is a generic obstacle avoidance function
+// takes a slice of points in 2d space, and returns a vector representing a force to avoid
+func (b *Boid) avoidPoints(points []r2.Point, radius float64) r2.Point {
 	force := r2.Point{0.0, 0.0}
-	if len(neighbours) == 0 {
+	if len(points) == 0 {
 		return force
 	}
 
-	// how many neighbours are too close
+	// how many points are too close
 	count := 0
 
-	for _, neighbour := range neighbours {
+	for _, point := range points {
 		// vector from neighbour to us
-		distanceVector := b.position.Sub(neighbour.position)
+		distanceVector := b.position.Sub(point)
 
 		// if we are too close...
 		distance := distanceVector.Norm()
-		if distance > 0 && distance < SeparationDistance {
+		if distance > 0 && distance < radius {
 
 			// unit vector pointing away from neighbour
 			distanceVector = distanceVector.Normalize()
@@ -269,6 +275,37 @@ func (b *Boid) Separation(neighbours []*Boid) r2.Point {
 	force = ConstrainPoint(force, MaxForce)
 
 	return force
+}
+
+// Separation:
+// steer to avoid crowding local flockmates
+func (b *Boid) Separation(neighbours []*Boid) r2.Point {
+	// TODO: in future, Sepration should just take generic thing
+	// which both Boid and Obstacle inherit from
+
+	// convert neighbours into abstract points
+	points := []r2.Point{}
+	for _, neighbour := range neighbours {
+		point := neighbour.position
+		points = append(points, point)
+	}
+
+	return b.avoidPoints(points, SeparationDistance)
+}
+
+// Avoid Obstacles. Basically the same as Separation, but with different types
+func (b *Boid) AvoidObstacles(obs Obstacles) r2.Point {
+	// TODO: in future, Sepration should just take generic thing
+	// which both Boid and Obstacle inherit from
+
+	// convert neighbours into abstract points
+	points := []r2.Point{}
+	for _, ob := range obs {
+		point := ob.position
+		points = append(points, point)
+	}
+
+	return b.avoidPoints(points, ObstacleDistance)
 }
 
 // Cohesion:
