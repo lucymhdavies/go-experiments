@@ -44,6 +44,11 @@ func input() error {
 		obstacle := NewObstacle(float64(cX), float64(cY))
 		obstacles = append(obstacles, obstacle)
 	}
+	// Space: paint obstacles
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		obstacle := NewObstacle(float64(cX), float64(cY))
+		obstacles = append(obstacles, obstacle)
+	}
 
 	return nil
 }

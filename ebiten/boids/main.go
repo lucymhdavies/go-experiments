@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -16,20 +20,13 @@ import (
 const (
 	// TODO: all of these, set sensible defaults, but pull actual values from config file
 
-	// Windowed dimensions
-	//WorldWidth  = 800
-	//WorldHeight = 600
-
-	// Fullscreen dimensions. TODO: get this from os
-	WorldWidth  = 1280
-	WorldHeight = 720
-	Fullscreen  = true
+	Fullscreen = true
 
 	ShowDebug = true
 
-	MinBoids     = 10
+	MinBoids     = 0
 	MaxBoids     = 5000
-	InitialBoids = 1000
+	InitialBoids = 0
 	MaxSpeed     = 2
 	MaxForce     = 0.03
 
@@ -47,9 +44,11 @@ const (
 	AvoidObstaclesMultiplier = 5
 
 	// TTL
-	BoidsHaveTTL  = false
-	MaxInitialTTL = 1000
-	MinInitialTTL = 100
+	BoidsHaveTTL  = true
+	MaxInitialTTL = 6000
+	MinInitialTTL = 6000
+	// Should the death of a boid result in the flock shrinking?
+	KeepFlockAtTargetSize = false
 
 	//
 	// Debug Options
@@ -66,7 +65,21 @@ const (
 var (
 	// How many boids we can update concurrently
 	workerPools = runtime.NumCPU()
+
+	//WorldWidth  = 1280
+	//WorldHeight = 720
+	//WorldWidth, WorldHeight = ebiten.ScreenSizeInFullscreen()
+	// Windowed dimensions
+	WorldWidth  = 800
+	WorldHeight = 600
 )
+
+func init() {
+
+	if Fullscreen {
+		WorldWidth, WorldHeight = ebiten.ScreenSizeInFullscreen()
+	}
+}
 
 var regularTermination = errors.New("regular termination")
 
@@ -128,10 +141,51 @@ func main() {
 
 	if Fullscreen {
 		ebiten.SetFullscreen(true)
-		//ebiten.SetCursorVisible(false)
+		ebiten.SetCursorVisible(false)
 	}
+
+	go addBoidsOnEmoji()
 
 	if err := ebiten.Run(update, WorldWidth, WorldHeight, 1, "Boids!"); err != nil && err != regularTermination {
 		panic(err)
+	}
+}
+
+func addBoidsOnEmoji() {
+
+	resp, _ := http.Get("https://stream.emojitracker.com/subscribe/eps")
+
+	reader := bufio.NewReader(resp.Body)
+	for {
+		line, _ := reader.ReadBytes('\n')
+		lineString := string(line)
+
+		// Lines look like
+		// data:{"1F449":1,"1F44D":1,"1F60F":1,"26F3":1}
+
+		if strings.HasPrefix(lineString, "data:") {
+
+			data := []byte(strings.TrimPrefix(lineString, "data:"))
+
+			jsonMap := make(map[string]int)
+			err := json.Unmarshal(data, &jsonMap)
+			if err != nil {
+				panic(err)
+			}
+
+			for key, val := range jsonMap {
+				// 1F426 = bird
+				// 1F388 = balloon
+				// 2764 = heart
+				// 1F602 = joy
+				if key == "2764" {
+					flock.targetSize += int(val)
+					if MaxBoids < flock.targetSize {
+						flock.targetSize = MaxBoids
+					}
+				}
+			}
+		}
+
 	}
 }

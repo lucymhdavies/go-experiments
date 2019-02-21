@@ -35,20 +35,24 @@ type Boid struct {
 	// For debugging, highlight boid 1, and its neighbours
 	IsHighlighted bool
 	IsNeighbour   bool
+
+	// Image?
+	// TODO: get image from https://twemoji.maxcdn.com/36x36/1f602.png
 }
 
 func init() {
-	img, _, err := image.Decode(bytes.NewReader(images.Bullet_png))
+	img, _, err := image.Decode(bytes.NewReader(images.Emoji_Heart_png))
 	if err != nil {
 		log.Fatal(err)
 	}
 	origEbitenImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	w, h := origEbitenImage.Size()
-	ebitenImage, _ = ebiten.NewImage(w, h, ebiten.FilterDefault)
+	ebitenImage, _ = ebiten.NewImage(w/10, h/10, ebiten.FilterDefault)
 
 	op := &ebiten.DrawImageOptions{}
-	op.ColorM.Scale(1, 1, 1, 0.5)
+	op.ColorM.Scale(1, 1, 1, 1)
+	op.GeoM.Scale(0.1, 0.1)
 	ebitenImage.DrawImage(origEbitenImage, op)
 }
 
@@ -81,22 +85,23 @@ func (b *Boid) Update(f *Flock) error {
 	// TODO: in future, maybe consider killing the boids if they get off screen instead of warping?
 
 	// If we have left the world, warp to the other side
-	if b.position.X > WorldWidth+float64(b.w)/2 {
+	if b.position.X > float64(WorldWidth)+float64(b.w)/2 {
 		b.position.X = -float64(b.w) / 2
 	}
 	if b.position.X < -float64(b.w)/2 {
-		b.position.X = WorldWidth + float64(b.w)/2
+		b.position.X = float64(WorldWidth) + float64(b.w)/2
 	}
-	if b.position.Y > WorldHeight+float64(b.h)/2 {
+	if b.position.Y > float64(WorldHeight)+float64(b.h)/2 {
 		b.position.Y = -float64(b.h) / 2
 	}
 	if b.position.Y < -float64(b.h)/2 {
-		b.position.Y = WorldHeight + float64(b.h)/2
+		b.position.Y = float64(WorldHeight) + float64(b.h)/2
 	}
 
 	// Calculate angle
 	// add pi/2, to account for sprite direction
-	b.angle = math.Atan2(b.velocity.Y, b.velocity.X) + math.Pi/2
+	b.angle = math.Atan2(b.velocity.Y, b.velocity.X) + 2*math.Pi/2
+	b.angle = 0
 
 	return nil
 }
@@ -118,7 +123,10 @@ func NewBoid(f *Flock) *Boid {
 
 	var ttl int
 	if BoidsHaveTTL {
-		ttl = MinInitialTTL + rand.Intn(MaxInitialTTL-MinInitialTTL)
+		ttl = MinInitialTTL
+		if MaxInitialTTL > MinInitialTTL {
+			ttl += rand.Intn(MaxInitialTTL - MinInitialTTL)
+		}
 	}
 
 	return &Boid{

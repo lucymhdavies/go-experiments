@@ -74,6 +74,14 @@ func (f *Flock) Update() error {
 				// from the slice, in addition to setting them to nil
 				f.boids[i] = nil
 				results <- true
+
+				if !KeepFlockAtTargetSize {
+					flock.targetSize -= 1
+					if flock.targetSize < MinBoids {
+						flock.targetSize = MinBoids
+					}
+
+				}
 			} else {
 				log.Tracef("Putting boid %v onto jobs channel", i)
 				jobs <- boid
