@@ -84,7 +84,14 @@ func jsPrompt() {
 		document.body.appendChild(inputHack)
 
 		// Focus the text box, which should launch vKeyboard
+		// works on desktop
 		inputHack.focus
+
+		// on iOS, we need to do a bit more...
+		// (something to do with not being able to automatically focus without
+		//  it being prompted by a user input...)
+		document.querySelector('canvas').ontouchstart  = function() { document.getElementById("inputHack").focus() }
+
 	*/
 
 	// TODO: check if one already exists?
@@ -97,8 +104,16 @@ func jsPrompt() {
 	inputHack.Get("style").Set("cssText", "background: white; color:black")
 	document.Get("body").Call("appendChild", inputHack)
 
-	time.Sleep(10 * time.Millisecond)
+	// Sufficient for desktop, but not for mobile...
 	inputHack.Call("focus")
+	notification = "Tap anywhere on screen to focus"
+
+	canvas := document.Call("querySelector", "canvas")
+	canvas.Set("ontouchstart", js.MakeFunc(func(this *js.Object, arguments []*js.Object) interface{} {
+		inputHack.Call("focus")
+		return nil
+	},
+	))
 
 	for {
 		text = inputHack.Get("value").String()
