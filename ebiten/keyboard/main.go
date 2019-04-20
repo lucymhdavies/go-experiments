@@ -100,8 +100,17 @@ func jsPrompt() {
 	inputHack := document.Call("createElement", "input")
 	inputHack.Set("id", "inputHack")
 	inputHack.Set("value", text+" from input")
-	// Add more CSS to make this actually transparent, but for now make it visible for debugging...
-	inputHack.Get("style").Set("cssText", "background: white; color:black")
+	// Put it approximately where the an in-game text area would be (vertically)
+	// (if this was real, take into account scaleFactor)
+	// Also make it really small, and off-screen to the left, so it's unseen
+	// Could also add some CSS to make it actually invisible
+	inputHack.Get("style").Set("cssText", `
+		background: black; color:black;
+		border: 0;
+		position: absolute;
+		top: 100px; left: -20px;
+		width: 0px; height: 0px;
+`)
 	document.Get("body").Call("appendChild", inputHack)
 
 	// Sufficient for desktop, but not for mobile...
@@ -109,6 +118,9 @@ func jsPrompt() {
 	notification = "Tap anywhere on screen to focus"
 
 	canvas := document.Call("querySelector", "canvas")
+
+	// on iOS (and maybe android?) looks like you need to actually tap
+	// somewhere on screen, otherwise JavaScript isn't allowed to focus an input
 	canvas.Set("ontouchstart", js.MakeFunc(func(this *js.Object, arguments []*js.Object) interface{} {
 		inputHack.Call("focus")
 		return nil
@@ -121,7 +133,9 @@ func jsPrompt() {
 
 		// Check if still focused?
 		if document.Get("activeElement") != inputHack {
-			break
+			notification = "Text Area Unfocused"
+		} else {
+			notification = "Text Area Focused"
 		}
 	}
 
