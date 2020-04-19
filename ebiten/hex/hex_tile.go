@@ -30,11 +30,10 @@ func init() {
 
 func NewHexTile(x, y int) *HexTile {
 	sizeX, sizeY := hexImage.Size()
-	// Tiles are vertical pointy, so no need for modifying sizeX
-	sizeY = int(float64(sizeY) * 0.775) // rough guestimate
 
+	// Tiles are vertical pointy, so no need for modifying sizeX
 	xOffset := sizeX
-	yOffset := sizeY
+	yOffset := int(float64(sizeY) * 0.775) // rough guestimate
 
 	// Go to midpoint of screen
 	xTranslate, yTranslate := float64(screenWidth)/2, float64(screenHeight)/2
