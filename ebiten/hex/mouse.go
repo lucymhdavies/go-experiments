@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 func mouseUpdate(g *Game) {
@@ -15,4 +16,8 @@ func mouseUpdate(g *Game) {
 	nearestTile := g.grid.FindNearestTile(float64(cursorX), float64(cursorY))
 
 	g.debugMessage += fmt.Sprintf(" - %d, %d", nearestTile.x, nearestTile.y)
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		nearestTile.clicked = !nearestTile.clicked
+	}
 }

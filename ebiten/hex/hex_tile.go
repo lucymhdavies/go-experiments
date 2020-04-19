@@ -90,6 +90,7 @@ type HexTile struct {
 
 	// Highlight this tile?
 	highlighted bool
+	clicked     bool
 }
 
 func (t *HexTile) Draw(screen *ebiten.Image) {
@@ -101,6 +102,10 @@ func (t *HexTile) Draw(screen *ebiten.Image) {
 	} else {
 		op.ColorM.Scale(1, 1, 1, 0.5)
 	}
+	if t.clicked {
+		op.ColorM.Scale(1, 0, 0, 1)
+	}
+
 	op.GeoM.Translate(t.screenX, t.screenY)
 
 	screen.DrawImage(t.image, op)
