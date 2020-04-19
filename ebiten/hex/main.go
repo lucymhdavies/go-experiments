@@ -12,8 +12,8 @@ const (
 	screenHeight = 960
 
 	// Size of grid in tiles
-	gridWidth  = 25
-	gridHeight = 21
+	gridWidth  = 21
+	gridHeight = 17
 )
 
 func main() {

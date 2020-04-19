@@ -1,6 +1,10 @@
 package main
 
-import "github.com/hajimehoshi/ebiten"
+import (
+	"math"
+
+	"github.com/hajimehoshi/ebiten"
+)
 
 //
 // Hex Grid
@@ -55,8 +59,33 @@ func NewHexGrid(width, height int) *HexGrid {
 }
 
 func (g *HexGrid) Draw(screen *ebiten.Image) {
-
 	for _, tile := range g.tiles {
 		tile.Draw(screen)
 	}
 }
+
+func (g *HexGrid) FindNearestTile(x, y float64) (nearestTile *HexTile) {
+
+	distance := -1.0
+
+	for _, tile := range g.tiles {
+		tile.highlighted = false
+
+		tileDistanceX := x - tile.screenMidX
+		tileDistanceY := y - tile.screenMidY
+
+		tileDistance := math.Sqrt(
+			math.Pow(tileDistanceX, 2) +
+				math.Pow(tileDistanceY, 2))
+
+		if distance == -1.0 || tileDistance < distance {
+			distance = tileDistance
+			nearestTile = tile
+		}
+	}
+
+	nearestTile.highlighted = true
+	return nearestTile
+}
+
+// TODO: get tile neighbours

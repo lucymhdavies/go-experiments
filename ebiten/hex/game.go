@@ -20,12 +20,16 @@ var (
 
 type Game struct {
 	grid *HexGrid
+
+	debugMessage string
 }
 
 func (g *Game) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		return regularTermination
 	}
+
+	mouseUpdate(g)
 
 	return nil
 }
@@ -35,7 +39,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	msg := fmt.Sprintf(`TPS: %0.2f
 FPS: %0.2f
-Press Q to quit`, ebiten.CurrentTPS(), ebiten.CurrentFPS())
+Press Q to quit
+%s`,
+		ebiten.CurrentTPS(), ebiten.CurrentFPS(),
+		g.debugMessage)
 	ebitenutil.DebugPrint(screen, msg)
 }
 

@@ -50,7 +50,7 @@ func NewHexTile(x, y int) *HexTile {
 	}
 
 	screenMidX := xTranslate
-	screenMidY := xTranslate
+	screenMidY := yTranslate
 
 	// Offset by size of tile
 	xTranslate -= float64(sizeX) / 2
@@ -87,15 +87,20 @@ type HexTile struct {
 	// used to detect closest tile to mouse
 	screenMidX float64
 	screenMidY float64
+
+	// Highlight this tile?
+	highlighted bool
 }
 
 func (t *HexTile) Draw(screen *ebiten.Image) {
 
-	// TODO: calculate position relative to grid on first frame
-	// then cache for later re-use
-
 	op := &ebiten.DrawImageOptions{}
 
+	if t.highlighted {
+		op.ColorM.Scale(1, 1, 1, 1)
+	} else {
+		op.ColorM.Scale(1, 1, 1, 0.5)
+	}
 	op.GeoM.Translate(t.screenX, t.screenY)
 
 	screen.DrawImage(t.image, op)
