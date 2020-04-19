@@ -29,6 +29,8 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		return regularTermination
 	}
 
+	g.grid.Update()
+
 	mouseUpdate(g)
 
 	return nil

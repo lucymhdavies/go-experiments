@@ -64,15 +64,19 @@ func (g *HexGrid) Draw(screen *ebiten.Image) {
 	}
 }
 
+func (g *HexGrid) Update() {
+	for _, tile := range g.tiles {
+		tile.highlighted = false
+	}
+}
+
 func (g *HexGrid) FindNearestTile(x, y float64) (nearestTile *HexTile, mouseOverTile bool) {
 
-	distance := -1.0
+	minDistance := -1.0
 	mouseOverTile = false
 	sizeX, sizeY := hexImage.Size()
 
 	for _, tile := range g.tiles {
-		tile.highlighted = false
-
 		tileDistanceX := x - tile.screenMidX
 		tileDistanceY := y - tile.screenMidY
 
@@ -80,17 +84,17 @@ func (g *HexGrid) FindNearestTile(x, y float64) (nearestTile *HexTile, mouseOver
 			math.Pow(tileDistanceX, 2) +
 				math.Pow(tileDistanceY, 2))
 
-		if distance == -1.0 || tileDistance < distance {
-			distance = tileDistance
+		if minDistance == -1.0 || tileDistance < minDistance {
+			minDistance = tileDistance
 			nearestTile = tile
 
 			// if the mouse is actually over the nearest tile
-			if tileDistanceX <= float64(sizeX)/2 && tileDistanceY <= float64(sizeY)/2 {
+			if tileDistanceX <= float64(sizeX)/2 &&
+				tileDistanceY <= float64(sizeY)/2 {
 				mouseOverTile = true
 			}
 		}
 	}
-
 	return nearestTile, mouseOverTile
 }
 
