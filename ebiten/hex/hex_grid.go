@@ -15,9 +15,6 @@ type HexGrid struct {
 }
 
 func NewHexGrid(width, height int) *HexGrid {
-	sizeX, sizeY := hexImage.Size()
-	// Tiles are vertical pointy, so no need for modifying sizeX
-	sizeY = int(float64(sizeY) * 0.775) // rough guestimate
 
 	tiles := []*HexTile{}
 
@@ -43,14 +40,7 @@ func NewHexGrid(width, height int) *HexGrid {
 				}
 			}
 
-			tile := &HexTile{
-				image: hexImage,
-				x:     x,
-				y:     y,
-
-				xOffset: sizeX,
-				yOffset: sizeY,
-			}
+			tile := NewHexTile(x, y)
 
 			tiles = append(tiles, tile)
 		}
