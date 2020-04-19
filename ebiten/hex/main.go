@@ -8,16 +8,17 @@ import (
 )
 
 const (
-	screenWidth  = 1280
-	screenHeight = 960
+	screenWidth  = 640
+	screenHeight = 480
+	screenScale  = 2
 
 	// Size of grid in tiles
-	gridWidth  = 21
-	gridHeight = 17
+	gridWidth  = 15
+	gridHeight = 13
 )
 
 func main() {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowSize(screenWidth*screenScale, screenHeight*screenScale)
 	ebiten.SetWindowTitle("Hex Tiles")
 
 	game = &Game{

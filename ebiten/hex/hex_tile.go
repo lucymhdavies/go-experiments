@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	img, _, err := image.Decode(bytes.NewReader(images.Hex_png))
+	img, _, err := image.Decode(bytes.NewReader(images.Ball_png))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func NewHexTile(x, y int) *HexTile {
 
 	// Tiles are vertical pointy, so no need for modifying sizeX
 	xOffset := sizeX
-	yOffset := int(float64(sizeY) * 0.775) // rough guestimate
+	yOffset := int(float64(sizeY) * 0.9) // rough guestimate
 
 	// Go to midpoint of screen
 	xTranslate, yTranslate := float64(screenWidth)/2, float64(screenHeight)/2
