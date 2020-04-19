@@ -13,11 +13,15 @@ func mouseUpdate(g *Game) {
 
 	g.debugMessage = fmt.Sprintf("%d, %d", cursorX, cursorY)
 
-	nearestTile := g.grid.FindNearestTile(float64(cursorX), float64(cursorY))
+	nearestTile, mouseOverTile := g.grid.FindNearestTile(float64(cursorX), float64(cursorY))
 
 	g.debugMessage += fmt.Sprintf(" - %d, %d", nearestTile.x, nearestTile.y)
 
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		nearestTile.clicked = !nearestTile.clicked
+	if mouseOverTile {
+		nearestTile.highlighted = true
+
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			nearestTile.clicked = !nearestTile.clicked
+		}
 	}
 }

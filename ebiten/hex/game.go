@@ -37,8 +37,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.grid.Draw(screen)
 
-	msg := fmt.Sprintf(`TPS: %0.2f
-FPS: %0.2f
+	msg := fmt.Sprintf(`TPS: %0.2f, FPS: %0.2f
 Press Q to quit
 %s`,
 		ebiten.CurrentTPS(), ebiten.CurrentFPS(),
