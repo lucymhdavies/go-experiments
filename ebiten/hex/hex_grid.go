@@ -67,6 +67,8 @@ func (g *HexGrid) Draw(screen *ebiten.Image) {
 func (g *HexGrid) FindNearestTile(x, y float64) (nearestTile *HexTile, mouseOverTile bool) {
 
 	distance := -1.0
+	mouseOverTile = false
+	sizeX, sizeY := hexImage.Size()
 
 	for _, tile := range g.tiles {
 		tile.highlighted = false
@@ -81,19 +83,15 @@ func (g *HexGrid) FindNearestTile(x, y float64) (nearestTile *HexTile, mouseOver
 		if distance == -1.0 || tileDistance < distance {
 			distance = tileDistance
 			nearestTile = tile
+
+			// if the mouse is actually over the nearest tile
+			if tileDistanceX <= float64(sizeX)/2 && tileDistanceY <= float64(sizeY)/2 {
+				mouseOverTile = true
+			}
 		}
 	}
 
-	sizeX, sizeY := hexImage.Size()
-
-	// if the mouse is actually over the nearest tile
-	// TODO: this currently results in not highlighting tiles
-	// when the mouse is near a 3-tile boundary
-	if distance < float64(sizeX)/2 && distance <= float64(sizeY)/2 {
-		return nearestTile, true
-	}
-
-	return nearestTile, false
+	return nearestTile, mouseOverTile
 }
 
 // TODO: get tile neighbours
